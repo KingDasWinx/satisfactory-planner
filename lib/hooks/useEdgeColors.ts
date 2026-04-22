@@ -66,10 +66,16 @@ export function useEdgeColors(
         const outputs: number[] = [0, 0, 0]
         connectedIndices.forEach((idx, pos) => { outputs[idx] = connectedDist[pos] })
 
+        // totalDemand is the sum of all connected output demands — used to signal
+        // the upstream machine that the splitter needs more than it's receiving.
+        const totalOutputDemand = connectedDemands.reduce((s, d) => s + (isFinite(d) ? d : 0), 0)
+
         rateMap.set(node.id, {
           inputs: [totalSupply],
           outputs,
-        })
+          // carry demand so the upstream edge can compare supply vs real need
+          inputDemand: totalOutputDemand > 0 ? totalOutputDemand : undefined,
+        } as { inputs: number[]; outputs: number[]; inputDemand?: number })
       } else if (node.type === 'mergerNode') {
         let totalInput = 0
         for (let i = 0; i < 3; i++) {
@@ -133,8 +139,13 @@ export function useEdgeColors(
       }
 
       let demand: number
-      if (targetNode?.type === 'mergerNode' || targetNode?.type === 'splitterNode') {
-        demand = supplyThisEdge // logistics nodes accept whatever arrives
+      if (targetNode?.type === 'splitterNode') {
+        // Use the real downstream demand the splitter computed (sum of all output demands).
+        // Falls back to supply so the edge is green when nothing is connected downstream.
+        const splitterDemand = (targetRates as { inputDemand?: number } | undefined)?.inputDemand
+        demand = splitterDemand !== undefined && splitterDemand > 0 ? splitterDemand : supplyThisEdge
+      } else if (targetNode?.type === 'mergerNode') {
+        demand = supplyThisEdge
       } else {
         demand = targetRates?.inputs[targetIdx] ?? 0
       }

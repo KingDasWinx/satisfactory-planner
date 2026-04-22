@@ -19,6 +19,10 @@ export function SplitterNode({ data, selected }: SplitterNodeProps) {
   const totalIn = data.incomingSupply?.[0] ?? 0
   const outs = data.outgoingDemand ?? []
 
+  // Total demanded by all connected outputs
+  const totalDemand = outs.reduce((s, r) => s + (r ?? 0), 0)
+  const isStarved = totalDemand > 0 && totalIn < totalDemand - 0.01
+
   return (
     <div className={`w-44 rounded-lg border bg-slate-900 shadow-lg relative transition-all duration-200 ${selected ? 'border-amber-400 selected-node-glow' : 'border-amber-500/40'}`}>
       {/* Input handle — vertically centred on the whole node */}
@@ -45,18 +49,31 @@ export function SplitterNode({ data, selected }: SplitterNodeProps) {
         <span className="text-amber-400 font-bold">⑃</span>
         <span className="text-xs font-semibold text-amber-300">Splitter</span>
         {totalIn > 0 && (
-          <span className="ml-auto text-[10px] text-slate-400">{fmt(totalIn)}/m</span>
+          <span className={`ml-auto text-[10px] tabular-nums ${isStarved ? 'text-red-400' : 'text-slate-400'}`}>
+            {fmt(totalIn)}{isStarved ? `/${fmt(totalDemand)}` : ''}/m
+          </span>
         )}
       </div>
 
       {/* Output rows — h-8 each to match handle positions */}
       {[0, 1, 2].map((i) => {
-        const rate = outs[i] ?? 0
+        const demand = outs[i] ?? 0
+        // Actual distributed rate (capped by available supply)
+        const distributed = totalDemand > 0
+          ? Math.min(demand, totalIn * (demand / totalDemand))
+          : 0
+        const isBelowDemand = demand > 0 && distributed < demand - 0.01
         return (
           <div key={i} className="h-8 flex items-center justify-end px-3 border-t border-slate-800/60">
-            <span className="text-[10px] text-slate-400">
-              {totalIn > 0 ? `${fmt(rate)}/m` : '—'}
-            </span>
+            {totalIn > 0 && demand > 0 ? (
+              <span className={`text-[10px] tabular-nums ${isBelowDemand ? 'text-red-400' : 'text-emerald-400'}`}>
+                {fmt(distributed)}/{fmt(demand)}/m
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-400">
+                {totalIn > 0 ? `${fmt(distributed)}/m` : '—'}
+              </span>
+            )}
           </div>
         )
       })}

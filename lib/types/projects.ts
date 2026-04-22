@@ -6,6 +6,11 @@ export interface ProjectMeta {
   name: string
   createdAt: number
   updatedAt: number
+  // Campos para comunidade futura — opcionais para manter compatibilidade com dados existentes
+  description?: string
+  tags?: string[]
+  isPublic?: boolean
+  authorName?: string
 }
 
 export interface ProjectData {

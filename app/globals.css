@@ -48,3 +48,44 @@ body {
 .selected-node-glow {
   animation: node-glow-spin 2s linear infinite;
 }
+
+/* xyflow Controls */
+.react-flow__controls {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.react-flow__controls-button {
+  background: #1e293b;
+  border: none;
+  border-bottom: 1px solid #334155;
+  fill: #94a3b8;
+  color: #94a3b8;
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+}
+.react-flow__controls-button:hover {
+  background: #334155;
+  fill: #e2e8f0;
+}
+.react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+/* xyflow MiniMap */
+.react-flow__minimap {
+  background: #1e293b !important;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.react-flow__minimap-mask {
+  fill: rgba(15, 17, 23, 0.7);
+}
+.react-flow__minimap-node {
+  fill: #334155;
+  stroke: #475569;
+}

@@ -12,9 +12,9 @@ import {
   type XYPosition,
 } from '@xyflow/react'
 import type { Machine, ParsedRecipe } from '@/lib/types/game'
-import type { MachineNodeData, MachineNode, SplitterNode, MergerNode, FactoryNode, MenuContext, ClipboardData, HistoryEntry } from '@/lib/types/store'
+import type { MachineNodeData, MachineNode, SplitterNode, MergerNode, TextNode, FrameNode, FactoryNode, MenuContext, ClipboardData, HistoryEntry } from '@/lib/types/store'
 
-export type { MachineNodeData, MachineNode, SplitterNode, MergerNode, FactoryNode, MenuContext }
+export type { MachineNodeData, MachineNode, SplitterNode, MergerNode, TextNode, FrameNode, FactoryNode, MenuContext }
 
 const COMPUTED_KEYS = new Set<keyof MachineNodeData>(['incomingSupply', 'outgoingDemand'])
 
@@ -44,6 +44,12 @@ type FactoryStore = {
   addMergerNode: (flowPosition: XYPosition) => string
   setRecipe: (nodeId: string, recipe: ParsedRecipe) => void
   setNodeConfig: (nodeId: string, config: Partial<Pick<MachineNodeData, 'nMachines' | 'clockSpeed' | 'minerVariant' | 'minerCapacity' | 'outputRateOverride' | 'incomingSupply' | 'outgoingDemand'>>) => void
+
+  addTextNode: (flowPosition: XYPosition) => string
+  addFrameNode: (flowPosition: XYPosition, width?: number, height?: number) => string
+  setTextNodeContent: (nodeId: string, text: string) => void
+  setFrameNodeLabel: (nodeId: string, label: string) => void
+  setFrameNodeLocked: (nodeId: string, locked: boolean) => void
 
   copyNodes: () => void
   startPaste: () => void
@@ -82,9 +88,56 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     // múltiplos estados quando vários nós são movidos/deletados juntos
     const hasPositionEnd = changes.some(c => c.type === 'position' && !c.dragging)
     const hasRemove = changes.some(c => c.type === 'remove')
-    if (hasPositionEnd || hasRemove) get()._pushHistory()
+    // 'dimensions' é emitido pelo NodeResizer ao terminar o resize de um frame
+    const hasDimensionsEnd = changes.some(c => c.type === 'dimensions' && !(c as { resizing?: boolean }).resizing)
+    if (hasPositionEnd || hasRemove || hasDimensionsEnd) get()._pushHistory()
+
+    const { nodes } = get()
+
+    // Quando um frame travado é arrastado, propaga o delta para os nós contidos
+    const positionChanges = changes.filter(
+      (c): c is Extract<typeof c, { type: 'position' }> => c.type === 'position' && c.dragging === true
+    )
+    let extraChanges: typeof changes = []
+    for (const change of positionChanges) {
+      const frameNode = nodes.find(n => n.id === change.id)
+      if (!frameNode || frameNode.type !== 'frameNode') continue
+      const frameData = frameNode.data as import('@/lib/types/store').FrameNodeData
+      if (!frameData.locked) continue
+
+      const newPos = change.position
+      if (!newPos) continue
+      const dx = newPos.x - frameNode.position.x
+      const dy = newPos.y - frameNode.position.y
+      if (dx === 0 && dy === 0) continue
+
+      const fw = (frameNode.style?.width as number | undefined) ?? 400
+      const fh = (frameNode.style?.height as number | undefined) ?? 300
+
+      // Nós cujo centro está dentro do frame recebem o mesmo delta
+      const children = nodes.filter(n => {
+        if (n.id === frameNode.id) return false
+        const nx = n.position.x
+        const ny = n.position.y
+        return (
+          nx >= frameNode.position.x &&
+          ny >= frameNode.position.y &&
+          nx <= frameNode.position.x + fw &&
+          ny <= frameNode.position.y + fh
+        )
+      })
+      for (const child of children) {
+        extraChanges.push({
+          type: 'position',
+          id: child.id,
+          dragging: true,
+          position: { x: child.position.x + dx, y: child.position.y + dy },
+        } as (typeof changes)[number])
+      }
+    }
+
     set((state) => ({
-      nodes: applyNodeChanges(changes, state.nodes) as FactoryNode[],
+      nodes: applyNodeChanges([...changes, ...extraChanges], state.nodes) as FactoryNode[],
     }))
   },
 
@@ -201,22 +254,103 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     })
   },
 
+  addTextNode: (flowPosition) => {
+    get()._pushHistory()
+    nodeCounter++
+    const id = `text-${nodeCounter}`
+    const newNode: TextNode = {
+      id,
+      type: 'textNode',
+      position: flowPosition,
+      data: { text: '' },
+    }
+    set((state) => ({ nodes: [...state.nodes, newNode] }))
+    return id
+  },
+
+  addFrameNode: (flowPosition, width, height) => {
+    get()._pushHistory()
+    nodeCounter++
+    const id = `frame-${nodeCounter}`
+    const newNode: FrameNode = {
+      id,
+      type: 'frameNode',
+      position: flowPosition,
+      data: { label: 'Área' },
+      style: { width: width ?? 400, height: height ?? 300 },
+      zIndex: -1,
+    }
+    // Frames vão no início do array para ficarem atrás dos outros nós na renderização
+    set((state) => ({ nodes: [newNode, ...state.nodes] }))
+    return id
+  },
+
+  setTextNodeContent: (nodeId, text) => {
+    set((state) => ({
+      nodes: state.nodes.map((n) =>
+        n.id === nodeId ? ({ ...n, data: { ...n.data, text } } as FactoryNode) : n
+      ),
+    }))
+  },
+
+  setFrameNodeLabel: (nodeId, label) => {
+    set((state) => ({
+      nodes: state.nodes.map((n) =>
+        n.id === nodeId ? ({ ...n, data: { ...n.data, label } } as FactoryNode) : n
+      ),
+    }))
+  },
+
+  setFrameNodeLocked: (nodeId, locked) => {
+    get()._pushHistory()
+    set((state) => ({
+      nodes: state.nodes.map((n) =>
+        n.id === nodeId ? ({ ...n, data: { ...n.data, locked } } as FactoryNode) : n
+      ),
+    }))
+  },
+
   copyNodes: () => {
     const { nodes, edges } = get()
     const selected = nodes.filter(n => n.selected)
     if (selected.length === 0) return
 
-    const selectedIds = new Set(selected.map(n => n.id))
+    // Frames travados selecionados puxam automaticamente os nós dentro deles
+    const extraIds = new Set<string>()
+    for (const node of selected) {
+      if (node.type !== 'frameNode') continue
+      const frameData = node.data as import('@/lib/types/store').FrameNodeData
+      if (!frameData.locked) continue
+      const fw = (node.style?.width as number | undefined) ?? 400
+      const fh = (node.style?.height as number | undefined) ?? 300
+      for (const other of nodes) {
+        if (other.id === node.id) continue
+        if (
+          other.position.x >= node.position.x &&
+          other.position.y >= node.position.y &&
+          other.position.x <= node.position.x + fw &&
+          other.position.y <= node.position.y + fh
+        ) {
+          extraIds.add(other.id)
+        }
+      }
+    }
+
+    const toCopy = extraIds.size > 0
+      ? [...selected, ...nodes.filter(n => extraIds.has(n.id) && !selected.some(s => s.id === n.id))]
+      : selected
+
+    const selectedIds = new Set(toCopy.map(n => n.id))
     const internalEdges = edges.filter(e => selectedIds.has(e.source) && selectedIds.has(e.target))
 
-    const xs = selected.map(n => n.position.x)
-    const ys = selected.map(n => n.position.y)
+    const xs = toCopy.map(n => n.position.x)
+    const ys = toCopy.map(n => n.position.y)
     const centroid = {
       x: (Math.min(...xs) + Math.max(...xs)) / 2,
       y: (Math.min(...ys) + Math.max(...ys)) / 2,
     }
 
-    set({ clipboard: { nodes: deepCopyNodes(selected), edges: shallowCopyEdges(internalEdges), centroid } })
+    set({ clipboard: { nodes: deepCopyNodes(toCopy), edges: shallowCopyEdges(internalEdges), centroid } })
   },
 
   startPaste: () => {
@@ -239,7 +373,11 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
 
     const newNodes = clipboard.nodes.map(n => {
       nodeCounter++
-      const prefix = n.type === 'splitterNode' ? 'splitter' : n.type === 'mergerNode' ? 'merger' : 'machine'
+      const prefix =
+        n.type === 'splitterNode' ? 'splitter' :
+        n.type === 'mergerNode'   ? 'merger'   :
+        n.type === 'textNode'     ? 'text'     :
+        n.type === 'frameNode'    ? 'frame'    : 'machine'
       const newId = `${prefix}-${nodeCounter}`
       idMap.set(n.id, newId)
       return {
@@ -262,8 +400,12 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       target: idMap.get(e.target)!,
     }))
 
+    // Frames colados ficam no início para renderizar atrás dos filhos
+    const newFrames = newNodes.filter(n => n.type === 'frameNode')
+    const newOthers = newNodes.filter(n => n.type !== 'frameNode')
+
     set({
-      nodes: [...nodes.map(n => ({ ...n, selected: false })), ...newNodes],
+      nodes: [...newFrames, ...nodes.map(n => ({ ...n, selected: false })), ...newOthers],
       edges: [...edges, ...newEdges],
       isGhostActive: false,
       // Mantém o clipboard intacto para permitir colagens repetidas (Ctrl+V múltiplas vezes)

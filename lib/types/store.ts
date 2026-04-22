@@ -30,7 +30,21 @@ export type MergerNodeData = {
 
 export type MergerNode = Node<MergerNodeData, 'mergerNode'>
 
-export type FactoryNode = MachineNode | SplitterNode | MergerNode
+export type TextNodeData = {
+  text: string
+  fontSize?: number
+  color?: string
+}
+export type TextNode = Node<TextNodeData, 'textNode'>
+
+export type FrameNodeData = {
+  label: string
+  color?: string
+  locked?: boolean
+}
+export type FrameNode = Node<FrameNodeData, 'frameNode'>
+
+export type FactoryNode = MachineNode | SplitterNode | MergerNode | TextNode | FrameNode
 
 export type MenuContext =
   | { type: 'canvas'; position: XYPosition; flowPosition: XYPosition }

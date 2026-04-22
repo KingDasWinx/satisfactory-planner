@@ -1,21 +1,25 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import {
   ReactFlow,
   type ReactFlowInstance,
 } from '@xyflow/react'
 import { useFactoryStore } from '@/store/factoryStore'
 import { MachineNode } from '@/components/nodes/MachineNode'
+import { SplitterNode } from '@/components/nodes/SplitterNode'
+import { MergerNode } from '@/components/nodes/MergerNode'
+import { GhostNode } from '@/components/nodes/GhostNode'
 import { SearchMenu } from '@/components/panels/SearchMenu'
 import { CanvasBackground } from '@/components/layout/CanvasBackground'
 import { MultiMachinesProvider } from '@/lib/gameDataContext'
 import { useEdgeColors } from '@/lib/hooks/useEdgeColors'
 import { useFlowSync } from '@/lib/hooks/useFlowSync'
 import { useConnectionHandler } from '@/lib/hooks/useConnectionHandler'
+import { useKeyboardShortcuts } from '@/lib/hooks/useKeyboardShortcuts'
 import type { Machine, MultiMachine, ParsedRecipe, Part } from '@/lib/types/game'
 
-const nodeTypes = { machineNode: MachineNode }
+const nodeTypes = { machineNode: MachineNode, splitterNode: SplitterNode, mergerNode: MergerNode }
 
 interface FactoryEditorProps {
   machines: Machine[]
@@ -33,15 +37,38 @@ export function FactoryEditor({ machines, recipes, multiMachines }: FactoryEdito
   const openMenu = useFactoryStore((s) => s.openMenu)
   const closeMenu = useFactoryStore((s) => s.closeMenu)
   const setNodeConfig = useFactoryStore((s) => s.setNodeConfig)
+  const isGhostActive = useFactoryStore((s) => s.isGhostActive)
+  const commitPaste = useFactoryStore((s) => s.commitPaste)
+  const setGhostPosition = useFactoryStore((s) => s.setGhostPosition)
 
   const rfInstance = useRef<ReactFlowInstance | null>(null)
+  // Ref para guardar posição de flow do mouse (usada no click-to-commit via onPaneClick)
+  const lastFlowMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  // Ref do estado atual de isGhostActive sem criar dependência de closure
+  const isGhostActiveRef = useRef(isGhostActive)
+  isGhostActiveRef.current = isGhostActive
 
   const { coloredEdges, incomingSupply, outgoingDemand } = useEdgeColors(nodes, edges, multiMachines)
 
   useFlowSync({ nodes, incomingSupply, outgoingDemand, setNodeConfig })
 
   const { handleConnect, handleConnectStart, handleConnectEnd, isValidConnection, menuOpenedFromDrag } =
-    useConnectionHandler({ nodes, rfInstance, onConnect, openMenu })
+    useConnectionHandler({ nodes, edges, rfInstance, onConnect, openMenu })
+
+  useKeyboardShortcuts()
+
+  // Mouse global para atualizar ghost — captura eventos mesmo quando o ReactFlow os consome
+  useEffect(() => {
+    function onGlobalMouseMove(e: MouseEvent) {
+      if (!isGhostActiveRef.current || !rfInstance.current) return
+      const flowPos = rfInstance.current.screenToFlowPosition({ x: e.clientX, y: e.clientY })
+      // Passa tanto as coords de flow (para cálculo de offset) quanto de tela (para renderização CSS)
+      setGhostPosition(flowPos, { x: e.clientX, y: e.clientY })
+      lastFlowMousePos.current = flowPos
+    }
+    window.addEventListener('mousemove', onGlobalMouseMove)
+    return () => window.removeEventListener('mousemove', onGlobalMouseMove)
+  }, [setGhostPosition])
 
   const lastPaneClick = useRef<{ time: number; x: number; y: number } | null>(null)
 
@@ -51,6 +78,13 @@ export function FactoryEditor({ machines, recipes, multiMachines }: FactoryEdito
         menuOpenedFromDrag.current = false
         return
       }
+
+      // Colar somente em clique no pane (canvas vazio) — onPaneClick não dispara para nós
+      if (isGhostActive && rfInstance.current) {
+        commitPaste(lastFlowMousePos.current)
+        return
+      }
+
       closeMenu()
       const now = Date.now()
       const last = lastPaneClick.current
@@ -63,7 +97,7 @@ export function FactoryEditor({ machines, recipes, multiMachines }: FactoryEdito
         lastPaneClick.current = { time: now, x: e.clientX, y: e.clientY }
       }
     },
-    [openMenu, closeMenu, menuOpenedFromDrag]
+    [isGhostActive, commitPaste, closeMenu, openMenu, menuOpenedFromDrag]
   )
 
   return (
@@ -102,6 +136,7 @@ export function FactoryEditor({ machines, recipes, multiMachines }: FactoryEdito
           )}
         </ReactFlow>
 
+        <GhostNode />
         <SearchMenu recipes={recipes} machines={machines} />
       </div>
     </MultiMachinesProvider>

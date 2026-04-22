@@ -98,3 +98,37 @@ export function edgeSufficiencyColor(supply: number, demand: number): string {
   if (ratio >= 0.5) return '#f59e0b'
   return '#ef4444'
 }
+
+// Distributes totalSupply among outputs, redistributing excess from saturated (demand-limited) outputs.
+// outputDemands[i] = Infinity means unconnected/unlimited.
+export function calcSplitterDistribution(totalSupply: number, outputDemands: number[]): number[] {
+  const n = outputDemands.length
+  if (n === 0) return []
+
+  let remaining = totalSupply
+  const result = new Array<number>(n).fill(0)
+  const saturated = new Array<boolean>(n).fill(false)
+
+  for (let iter = 0; iter < n; iter++) {
+    const freeSlots = outputDemands.filter((_, i) => !saturated[i]).length
+    if (freeSlots === 0) break
+    const share = remaining / freeSlots
+    let newlySaturated = false
+    for (let i = 0; i < n; i++) {
+      if (saturated[i]) continue
+      if (outputDemands[i] <= share) {
+        result[i] = outputDemands[i]
+        remaining -= outputDemands[i]
+        saturated[i] = true
+        newlySaturated = true
+      }
+    }
+    if (!newlySaturated) {
+      for (let i = 0; i < n; i++) {
+        if (!saturated[i]) result[i] = share
+      }
+      break
+    }
+  }
+  return result
+}

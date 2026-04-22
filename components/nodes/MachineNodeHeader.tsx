@@ -18,7 +18,9 @@ export function MachineNodeHeader({ id, data }: MachineNodeHeaderProps) {
   return (
     <div className="flex items-center gap-2 rounded-t-lg bg-amber-500/20 px-3 py-2 border-b border-amber-500/30">
       <span className="text-amber-400 text-base">⚙</span>
-      <span className="text-sm font-semibold text-amber-200 truncate">{machine.name}</span>
+      <span className="text-sm font-semibold text-amber-200 truncate">
+        {nMachines > 1 && <span className="text-amber-400 mr-1">{nMachines}×</span>}{machine.name}
+      </span>
       <div className="ml-auto flex items-center gap-2 shrink-0">
         {machine.averagePower > 0 && (
           <span className="text-xs text-slate-400">

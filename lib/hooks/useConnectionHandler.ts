@@ -1,17 +1,56 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
-import type { ReactFlowInstance, OnConnect, OnConnectStart, OnConnectEnd, Connection } from '@xyflow/react'
-import type { MachineNode, MenuContext } from '@/lib/types/store'
+import type { Edge, ReactFlowInstance, OnConnect, OnConnectStart, OnConnectEnd, Connection } from '@xyflow/react'
+import type { FactoryNode, MenuContext } from '@/lib/types/store'
 
 type ConnectionHandlerProps = {
-  nodes: MachineNode[]
+  nodes: FactoryNode[]
+  edges: Edge[]
   rfInstance: React.RefObject<ReactFlowInstance | null>
   onConnect: OnConnect
   openMenu: (ctx: MenuContext) => void
 }
 
-export function useConnectionHandler({ nodes, rfInstance, onConnect, openMenu }: ConnectionHandlerProps) {
+function isLogisticsNode(type: string | undefined) {
+  return type === 'splitterNode' || type === 'mergerNode'
+}
+
+// Collects all unique parts flowing out of a given source handle, recursing through logistics nodes.
+// Uses a visited set (nodeId::handle) to prevent infinite loops in cyclic graphs.
+function inferPartsFromUpstream(
+  nodeId: string,
+  sourceHandle: string,
+  nodes: FactoryNode[],
+  edges: Edge[],
+  visited = new Set<string>(),
+): string[] {
+  const key = `${nodeId}::${sourceHandle}`
+  if (visited.has(key)) return []
+  visited.add(key)
+
+  const node = nodes.find(n => n.id === nodeId)
+  if (!node) return []
+
+  if (node.type === 'machineNode') {
+    const idx = parseInt(sourceHandle.replace('out-', ''), 10)
+    const part = node.data.recipe?.outputs[idx]?.part
+    return part ? [part] : []
+  }
+
+  // For logistics nodes walk ALL incoming edges and union the parts
+  const inEdges = edges.filter(e => e.target === nodeId)
+  const parts = new Set<string>()
+  for (const edge of inEdges) {
+    if (!edge.source || !edge.sourceHandle) continue
+    for (const p of inferPartsFromUpstream(edge.source, edge.sourceHandle, nodes, edges, visited)) {
+      parts.add(p)
+    }
+  }
+  return [...parts]
+}
+
+export function useConnectionHandler({ nodes, edges, rfInstance, onConnect, openMenu }: ConnectionHandlerProps) {
   const connectionJustMade = useRef(false)
   const pendingDrag = useRef<{
     nodeId: string
@@ -66,22 +105,37 @@ export function useConnectionHandler({ nodes, rfInstance, onConnect, openMenu }:
       if (!sourceNode) return
 
       if (drag.handleType === 'source') {
-        const idx = parseInt(drag.handleId.replace('out-', ''), 10)
-        const outputPart = sourceNode.data.recipe?.outputs[idx]?.part
-        if (!outputPart) return
+        const outputParts = inferPartsFromUpstream(drag.nodeId, drag.handleId, nodes, edges)
         menuOpenedFromDrag.current = true
-        openMenu({
-          type: 'output',
-          nodeId: drag.nodeId,
-          handleId: drag.handleId,
-          outputPart,
-          position: { x: clientX + 12, y: clientY - 20 },
-          nodeFlowPosition: sourceNode.position,
-          dropFlowPosition,
-        })
+        if (outputParts.length > 0) {
+          openMenu({
+            type: 'output',
+            nodeId: drag.nodeId,
+            handleId: drag.handleId,
+            outputPart: outputParts[0],
+            outputParts,
+            position: { x: clientX + 12, y: clientY - 20 },
+            nodeFlowPosition: sourceNode.position,
+            dropFlowPosition,
+          })
+        } else {
+          // Unconnected logistics node — open generic canvas menu
+          if (!dropFlowPosition) return
+          openMenu({
+            type: 'canvas',
+            position: { x: clientX + 12, y: clientY - 20 },
+            flowPosition: dropFlowPosition,
+          })
+        }
       } else {
-        const idx = parseInt(drag.handleId.replace('in-', ''), 10)
-        const inputPart = sourceNode.data.recipe?.inputs[idx]?.part
+        // For input handle drag, infer the part from the node's own recipe input
+        // (logistics node inputs don't restrict by part — use upstream of the node itself)
+        const node = nodes.find(n => n.id === drag.nodeId)
+        let inputPart: string | undefined
+        if (node?.type === 'machineNode') {
+          const idx = parseInt(drag.handleId.replace('in-', ''), 10)
+          inputPart = node.data.recipe?.inputs[idx]?.part
+        }
         if (!inputPart) return
         menuOpenedFromDrag.current = true
         openMenu({
@@ -95,7 +149,7 @@ export function useConnectionHandler({ nodes, rfInstance, onConnect, openMenu }:
         })
       }
     },
-    [nodes, openMenu, rfInstance]
+    [nodes, edges, openMenu, rfInstance]
   )
 
   const isValidConnection = useCallback(
@@ -105,14 +159,20 @@ export function useConnectionHandler({ nodes, rfInstance, onConnect, openMenu }:
 
       const sourceNode = nodes.find((n) => n.id === source)
       const targetNode = nodes.find((n) => n.id === target)
-      if (!sourceNode?.data.recipe || !targetNode?.data.recipe) return false
+
+      // Logistics nodes (splitter/merger) accept any connection
+      if (isLogisticsNode(sourceNode?.type) || isLogisticsNode(targetNode?.type)) return true
+
+      const sourceData = sourceNode?.type === 'machineNode' ? sourceNode.data : null
+      const targetData = targetNode?.type === 'machineNode' ? targetNode.data : null
+      if (!sourceData?.recipe || !targetData?.recipe) return false
 
       const sourceIdx = sourceHandle ? parseInt(sourceHandle.replace('out-', ''), 10) : NaN
       const targetIdx = targetHandle ? parseInt(targetHandle.replace('in-', ''), 10) : NaN
       if (isNaN(sourceIdx) || isNaN(targetIdx)) return false
 
-      const sourcePart = sourceNode.data.recipe.outputs[sourceIdx]?.part
-      const targetPart = targetNode.data.recipe.inputs[targetIdx]?.part
+      const sourcePart = sourceData.recipe.outputs[sourceIdx]?.part
+      const targetPart = targetData.recipe.inputs[targetIdx]?.part
       return !!sourcePart && !!targetPart && sourcePart === targetPart
     },
     [nodes]

@@ -5,36 +5,16 @@ import {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
-  type Node,
   type Edge,
   type OnNodesChange,
   type OnEdgesChange,
   type OnConnect,
   type XYPosition,
 } from '@xyflow/react'
-import type { Machine, ParsedRecipe } from '@/lib/gameData'
+import type { Machine, ParsedRecipe } from '@/lib/types/game'
+import type { MachineNodeData, MachineNode, MenuContext } from '@/lib/types/store'
 
-export type MachineNodeData = {
-  machine: Machine
-  recipe: ParsedRecipe
-  availableRecipes: ParsedRecipe[]
-  nMachines: number
-  clockSpeed: number            // 0.01–2.5, padrão 1.0 (100%)
-  minerVariant?: string         // ex: "Miner Mk.2"
-  minerCapacity?: string        // ex: "Pure"
-  outputRateOverride?: number   // se definido, substitui o cálculo automático de /min
-  // computed by FactoryEditor — supply arriving at each input handle (index = handle index)
-  incomingSupply?: number[]
-  // computed by FactoryEditor — total demand on each output handle from connected nodes
-  outgoingDemand?: number[]
-}
-
-export type MachineNode = Node<MachineNodeData, 'machineNode'>
-
-export type MenuContext =
-  | { type: 'canvas'; position: XYPosition; flowPosition: XYPosition }
-  | { type: 'input'; nodeId: string; handleId: string; inputPart: string; position: XYPosition; nodeFlowPosition: XYPosition; dropFlowPosition?: XYPosition }
-  | { type: 'output'; nodeId: string; handleId: string; outputPart: string; position: XYPosition; nodeFlowPosition: XYPosition; dropFlowPosition?: XYPosition }
+export type { MachineNodeData, MachineNode, MenuContext }
 
 type FactoryStore = {
   nodes: MachineNode[]
@@ -81,7 +61,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
   addRecipeNode: (recipe, machine, flowPosition) => {
     nodeCounter++
     const id = `machine-${nodeCounter}`
-    const availableRecipes = get().nodes // not needed here, just use recipe
+    void get().nodes // suppress unused warning — kept for referential stability
     const newNode: MachineNode = {
       id,
       type: 'machineNode',

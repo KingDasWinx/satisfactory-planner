@@ -1,5 +1,9 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import type { Ingredient, ParsedRecipe, Machine, Part, MultiMachineVariant, MultiMachineCapacity, MultiMachine, GameData } from '@/lib/types/game'
+
+// Re-export types for backwards compatibility
+export type { Ingredient, ParsedRecipe, Machine, Part, MultiMachineVariant, MultiMachineCapacity, MultiMachine, GameData }
 
 // ─── Raw types from game_data.json ───────────────────────────────────────────
 
@@ -42,63 +46,6 @@ type RawGameData = {
   MultiMachines: RawMultiMachine[]
   Parts: Array<{ Name: string; Tier: string; SinkPoints: number }>
   Recipes: RawRecipe[]
-}
-
-// ─── Public types ─────────────────────────────────────────────────────────────
-
-export type Ingredient = {
-  part: string
-  amount: number
-}
-
-export type ParsedRecipe = {
-  name: string
-  machine: string
-  batchTime: number
-  tier: string
-  alternate: boolean
-  inputs: Ingredient[]
-  outputs: Ingredient[]
-}
-
-export type Machine = {
-  name: string
-  tier: string
-  averagePower: number
-  maxProductionShards: number
-}
-
-export type Part = {
-  name: string
-  tier: string
-  sinkPoints: number
-}
-
-export type MultiMachineVariant = {
-  name: string
-  partsRatio: number
-  isDefault: boolean
-}
-
-export type MultiMachineCapacity = {
-  name: string
-  partsRatio: number
-  isDefault: boolean
-}
-
-export type MultiMachine = {
-  name: string
-  showPpm: boolean
-  defaultMax: number
-  machines: MultiMachineVariant[]
-  capacities: MultiMachineCapacity[]
-}
-
-export type GameData = {
-  machines: Machine[]
-  recipes: ParsedRecipe[]
-  parts: Part[]
-  multiMachines: MultiMachine[]
 }
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
@@ -159,12 +106,12 @@ export async function getGameData(): Promise<GameData> {
     name: mm.Name,
     showPpm: mm.ShowPpm ?? false,
     defaultMax: mm.DefaultMax ? evalFraction(mm.DefaultMax) : 0,
-    machines: (mm.Machines ?? []).map((v) => ({
+    machines: (mm.Machines ?? []).map((v): MultiMachineVariant => ({
       name: v.Name,
       partsRatio: v.PartsRatio ? evalFraction(v.PartsRatio) : 1,
       isDefault: v.Default ?? false,
     })),
-    capacities: (mm.Capacities ?? []).map((c) => ({
+    capacities: (mm.Capacities ?? []).map((c): MultiMachineCapacity => ({
       name: c.Name,
       partsRatio: c.PartsRatio ? evalFraction(c.PartsRatio) : 1,
       isDefault: c.Default ?? false,

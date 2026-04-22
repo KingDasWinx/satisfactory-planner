@@ -1,12 +1,10 @@
-import type { MultiMachine } from '@/lib/gameData'
-import type { MachineNodeData } from '@/store/factoryStore'
+import type { MultiMachine } from '@/lib/types/game'
+import type { MachineNodeData } from '@/lib/types/store'
+import type { NodeRates } from '@/lib/types/flow'
+
+export type { NodeRates }
 
 const EXTRACTOR_MULTI_NAMES = ['Miner', 'Oil Extractor', 'Resource Well Extractor', 'Water Extractor']
-
-export type NodeRates = {
-  inputs: number[]
-  outputs: number[]
-}
 
 export function calcNodeRates(data: MachineNodeData, multiMachines: MultiMachine[]): NodeRates {
   const { recipe, nMachines, clockSpeed, minerVariant, minerCapacity, outputRateOverride } = data

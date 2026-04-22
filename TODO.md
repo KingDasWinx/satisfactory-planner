@@ -7,146 +7,80 @@ desenvolvedor separado.
 
 ---
 
-## 1. Extrair tipos para `lib/types/`
+## ~~1. Extrair tipos para `lib/types/`~~ ✅ CONCLUÍDO
 
-**Problema:** tipos e interfaces estão espalhados em `store/factoryStore.ts`,
-`lib/gameData.ts` e `lib/flowCalc.ts`.
+~~**Problema:** tipos e interfaces estavam espalhados em `store/factoryStore.ts`,
+`lib/gameData.ts` e `lib/flowCalc.ts`.~~
 
-**O que fazer:**
-- Criar `lib/types/game.ts` — mover `Ingredient`, `ParsedRecipe`, `Machine`,
-  `Part`, `MultiMachine`, `GameData` de `lib/gameData.ts`
-- Criar `lib/types/flow.ts` — mover `NodeRates` de `lib/flowCalc.ts`
-- Criar `lib/types/store.ts` — mover `MachineNodeData`, `MenuContext` e
-  variantes de `store/factoryStore.ts`
-- Criar `lib/types/index.ts` — re-exportar tudo dos três arquivos acima
-
-**Atenção:** após mover, `store/factoryStore.ts` deve importar `MachineNodeData`
-e `MenuContext` de `lib/types/` — nunca o contrário. A direção de dependência
-é sempre `store/ → lib/types/`, jamais `lib/ → store/`.
+Criados `lib/types/game.ts`, `lib/types/flow.ts`, `lib/types/store.ts` e `lib/types/index.ts`.
+`lib/gameData.ts` e `lib/flowCalc.ts` re-exportam os tipos para backwards compatibility.
+`store/factoryStore.ts` importa de `lib/types/`.
 
 ---
 
-## 2. Separar `MachineNode.tsx` em subcomponentes
+## ~~2. Separar `MachineNode.tsx` em subcomponentes~~ ✅ CONCLUÍDO
 
-**Problema:** `components/nodes/MachineNode.tsx` tem mais de 400 linhas fazendo tudo:
-header, corpo, config popup, utilization bar, handles.
-
-**O que fazer:**
-- `components/nodes/MachineNode.tsx` — mantém só a montagem, importa os demais
-- `components/nodes/MachineNodeHeader.tsx` — nome da máquina, ícone de energia, botão config
-- `components/nodes/MachineNodeBody.tsx` — lista de inputs/outputs com valores de supply/demand
-- `components/nodes/MachineNodeUtilBar.tsx` — barra de utilização (verde/âmbar/vermelho)
-- `components/nodes/ConfigPopup.tsx` — painel de config (recipe picker, nMachines, clockSpeed, variante de minerador)
-- `components/nodes/ExtractorRateInput.tsx` — input inline de override de taxa para extratores
+Criados:
+- `components/nodes/MachineNode.tsx` — compositor simples
+- `components/nodes/MachineNodeHeader.tsx` — cabeçalho, potência, botão config
+- `components/nodes/MachineNodeBody.tsx` — receita, inputs/outputs, valores de supply/demand
+- `components/nodes/MachineNodeUtilBar.tsx` — barra de utilização
+- `components/nodes/ConfigPopup.tsx` — painel de config via portal
+- `components/nodes/ExtractorRateInput.tsx` — input inline de override de taxa
 
 ---
 
-## 3. Separar `FactoryEditor.tsx` em subcomponentes e hooks
+## ~~3. Separar `FactoryEditor.tsx` em subcomponentes e hooks~~ ✅ CONCLUÍDO
 
-**Problema:** `components/FactoryEditor.tsx` tem ~285 linhas misturando lógica de
-cálculo de fluxo, handlers de conexão e JSX do canvas.
-
-**O que fazer:**
-- `lib/hooks/useEdgeColors.ts` — recalcula cores e labels das arestas com base
-  em supply/demand (parte do cálculo atual de `coloredEdges`)
-- `lib/hooks/useFlowSync.ts` — acumula `incomingSupply` e `outgoingDemand` por
-  nó e empurra para o store via `setNodeConfig` (o `useEffect` atual)
-- `lib/hooks/useConnectionHandler.ts` — lógica de `onConnectStart`, `onConnectEnd`,
-  `handleConnect`, `isValidConnection` e as refs de controle (`connectionJustMade`,
-  `pendingDrag`, `menuOpenedFromDrag`)
-- `components/layout/CanvasBackground.tsx` — wrapper que renderiza `<Background>`,
-  `<Controls>` e `<MiniMap>` com suas classes de estilo
-- `FactoryEditor.tsx` deve ficar responsável apenas por compor os subcomponentes
-  e passar props
-
-**Nota:** `useEdgeColors` e `useFlowSync` são separados propositalmente —
-juntos ultrapassariam o limite de 80 linhas por hook definido no CLAUDE.md.
+Criados:
+- `lib/hooks/useEdgeColors.ts` — calcula cores e labels das arestas
+- `lib/hooks/useFlowSync.ts` — sincroniza supply/demand nos nós via store
+- `lib/hooks/useConnectionHandler.ts` — lógica de connect/drag/popup
+- `components/layout/CanvasBackground.tsx` — Background, Controls e MiniMap
 
 ---
 
 ## ~~4. Mover `SearchMenu.tsx` para `components/panels/`~~ ✅ CONCLUÍDO
 
-~~**Problema:** `SearchMenu.tsx` é um painel flutuante, não um componente genérico
-de UI, e estava na raiz de `components/`.~~
-
-~~Movido para `components/panels/SearchMenu.tsx`. Import em `FactoryEditor.tsx` atualizado.~~
-
 ---
 
 ## ~~5. Deletar `Sidebar.tsx`~~ ✅ CONCLUÍDO
 
-~~`components/Sidebar.tsx` deletado.~~
+---
+
+## ~~6. Extrair `fmt()` para `lib/utils/format.ts`~~ ✅ CONCLUÍDO
+
+Criado `lib/utils/format.ts`. Imports em `FactoryEditor.tsx` e `MachineNode.tsx` atualizados.
 
 ---
 
-## 6. Extrair `fmt()` para `lib/utils/format.ts`
+## ~~7. Extrair `gameDataContext.tsx` para `lib/hooks/`~~ ✅ CONCLUÍDO
 
-**Problema:** a função `fmt()` está exportada de dentro de `MachineNode.tsx`,
-o que é semanticamente errado — um componente exportando uma utilidade.
-Atualmente `FactoryEditor.tsx` importa `fmt` de `MachineNode.tsx`.
-
-**O que fazer:**
-- Criar `lib/utils/format.ts` com `fmt()` e qualquer outra função de
-  formatação de número/texto
-- Atualizar todos os imports que usam `fmt` de `MachineNode.tsx`
-  (`FactoryEditor.tsx` e o próprio `MachineNode.tsx`)
+Criado `lib/hooks/useMultiMachines.ts`. `lib/gameDataContext.tsx` mantém apenas o contexto e o Provider.
 
 ---
 
-## 7. Extrair `gameDataContext.tsx` para `lib/hooks/`
+## ~~8. Corrigir uso do store em `FactoryEditor.tsx`~~ ✅ CONCLUÍDO
 
-**Problema:** o hook `useMultiMachines()` está dentro de `lib/gameDataContext.tsx`
-junto com o Provider, misturando responsabilidades.
-
-**O que fazer:**
-- Manter `lib/gameDataContext.tsx` apenas com o contexto e o Provider
-- Criar `lib/hooks/useMultiMachines.ts` que importa o contexto e exporta o hook
-- Atualizar imports em todos os componentes que usam `useMultiMachines`
-
----
-
-## 8. Corrigir uso do store em `FactoryEditor.tsx`
-
-**Problema:** `FactoryEditor.tsx` desestrutura o store inteiro com
-`const { nodes, edges, ... } = useFactoryStore()`, violando a regra do CLAUDE.md
-que exige seletores individuais.
-
-**O que fazer:**
-- Substituir a desestruturação por seletores explícitos:
-  ```ts
-  const nodes = useFactoryStore((s) => s.nodes)
-  const edges = useFactoryStore((s) => s.edges)
-  // etc.
-  ```
-- Aplicar o mesmo padrão a qualquer outro componente que ainda desestruture
-  o store inteiro
+`FactoryEditor.tsx` usa seletores individuais para cada campo do store.
 
 ---
 
 ## ~~9. Organizar pasta `data/`~~ ✅ CONCLUÍDO
 
-~~`data/game_data.json` movido para `data/game/game_data.json`. Path em `lib/gameData.ts` atualizado.
-`data/icons/` movido para `public/icons/` — Next.js serve assets estáticos de `public/`.~~
-
 ---
 
 ## ~~10. Mover utilitários CLI para `scripts/`~~ ✅ CONCLUÍDO
 
-~~`src/index.ts` → `scripts/index.ts`, `src/config.ts` → `scripts/config.ts`.
-Pasta `src/` deletada. Script `cli` em `package.json` atualizado. Pasta `dist/` deletada.~~
+---
+
+## ~~11. Criar `lib/utils/index.ts`~~ ✅ CONCLUÍDO
+
+Criado `lib/utils/index.ts` re-exportando `fmt` de `format.ts`.
 
 ---
 
-## 11. Criar `lib/utils/index.ts`
-
-Após as etapas acima, criar `lib/utils/index.ts` re-exportando todas as
-utilidades (`format`, etc.) para imports limpos.
-
----
-
-## Estrutura alvo após refatoração
-
-Itens com ✅ já estão no lugar. Itens pendentes são os que restam implementar.
+## Estrutura final
 
 ```
 ├── app/
@@ -155,31 +89,31 @@ Itens com ✅ já estão no lugar. Itens pendentes são os que restam implementa
 │   └── globals.css
 ├── components/
 │   ├── layout/
-│   │   └── CanvasBackground.tsx          ← pendente (item 3)
+│   │   └── CanvasBackground.tsx          ✅
 │   ├── nodes/
-│   │   ├── MachineNode.tsx               ← pendente separar (item 2)
-│   │   ├── MachineNodeHeader.tsx         ← pendente (item 2)
-│   │   ├── MachineNodeBody.tsx           ← pendente (item 2)
-│   │   ├── MachineNodeUtilBar.tsx        ← pendente (item 2)
-│   │   ├── ConfigPopup.tsx               ← pendente (item 2)
-│   │   └── ExtractorRateInput.tsx        ← pendente (item 2)
+│   │   ├── MachineNode.tsx               ✅
+│   │   ├── MachineNodeHeader.tsx         ✅
+│   │   ├── MachineNodeBody.tsx           ✅
+│   │   ├── MachineNodeUtilBar.tsx        ✅
+│   │   ├── ConfigPopup.tsx               ✅
+│   │   └── ExtractorRateInput.tsx        ✅
 │   ├── panels/
-│   │   └── SearchMenu.tsx                ✅ concluído
+│   │   └── SearchMenu.tsx                ✅
 │   └── FactoryEditor.tsx
 ├── lib/
 │   ├── types/
-│   │   ├── game.ts                       ← pendente (item 1)
-│   │   ├── flow.ts                       ← pendente (item 1)
-│   │   ├── store.ts                      ← pendente (item 1)
-│   │   └── index.ts                      ← pendente (item 1)
+│   │   ├── game.ts                       ✅
+│   │   ├── flow.ts                       ✅
+│   │   ├── store.ts                      ✅
+│   │   └── index.ts                      ✅
 │   ├── hooks/
-│   │   ├── useEdgeColors.ts              ← pendente (item 3)
-│   │   ├── useFlowSync.ts                ← pendente (item 3)
-│   │   ├── useConnectionHandler.ts       ← pendente (item 3)
-│   │   └── useMultiMachines.ts           ← pendente (item 7)
+│   │   ├── useEdgeColors.ts              ✅
+│   │   ├── useFlowSync.ts                ✅
+│   │   ├── useConnectionHandler.ts       ✅
+│   │   └── useMultiMachines.ts           ✅
 │   ├── utils/
-│   │   ├── format.ts                     ← pendente (item 6)
-│   │   └── index.ts                      ← pendente (item 11)
+│   │   ├── format.ts                     ✅
+│   │   └── index.ts                      ✅
 │   ├── gameData.ts
 │   ├── gameDataContext.tsx
 │   └── flowCalc.ts
@@ -187,13 +121,12 @@ Itens com ✅ já estão no lugar. Itens pendentes são os que restam implementa
 │   └── factoryStore.ts
 ├── data/
 │   ├── game/
-│   │   └── game_data.json                ✅ concluído
+│   │   └── game_data.json                ✅
 │   └── docs/
 │       └── (JSONs de idioma)
 ├── scripts/
-│   ├── index.ts                          ✅ concluído
-│   └── config.ts                         ✅ concluído
+│   ├── index.ts                          ✅
+│   └── config.ts                         ✅
 └── public/
-    └── icons/                            ✅ concluído
-        └── (ícones de itens/máquinas)
+    └── icons/                            ✅
 ```

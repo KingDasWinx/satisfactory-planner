@@ -62,7 +62,9 @@ type FactoryStore = {
   _pushHistory: () => void
 }
 
-let nodeCounter = 0
+function uid(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+}
 
 function deepCopyNodes(nodes: FactoryNode[]): FactoryNode[] {
   return nodes.map(n => ({ ...n, data: { ...n.data } }) as FactoryNode)
@@ -160,8 +162,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
 
   addRecipeNode: (recipe, machine, flowPosition) => {
     get()._pushHistory()
-    nodeCounter++
-    const id = `machine-${nodeCounter}`
+    const id = uid('machine')
     const newNode: MachineNode = {
       id,
       type: 'machineNode',
@@ -174,8 +175,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
 
   addSplitterNode: (flowPosition) => {
     get()._pushHistory()
-    nodeCounter++
-    const id = `splitter-${nodeCounter}`
+    const id = uid('splitter')
     const newNode: SplitterNode = {
       id,
       type: 'splitterNode',
@@ -188,8 +188,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
 
   addMergerNode: (flowPosition) => {
     get()._pushHistory()
-    nodeCounter++
-    const id = `merger-${nodeCounter}`
+    const id = uid('merger')
     const newNode: MergerNode = {
       id,
       type: 'mergerNode',
@@ -256,8 +255,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
 
   addTextNode: (flowPosition) => {
     get()._pushHistory()
-    nodeCounter++
-    const id = `text-${nodeCounter}`
+    const id = uid('text')
     const newNode: TextNode = {
       id,
       type: 'textNode',
@@ -270,8 +268,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
 
   addFrameNode: (flowPosition, width, height) => {
     get()._pushHistory()
-    nodeCounter++
-    const id = `frame-${nodeCounter}`
+    const id = uid('frame')
     const newNode: FrameNode = {
       id,
       type: 'frameNode',
@@ -372,13 +369,12 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     }
 
     const newNodes = clipboard.nodes.map(n => {
-      nodeCounter++
       const prefix =
         n.type === 'splitterNode' ? 'splitter' :
         n.type === 'mergerNode'   ? 'merger'   :
         n.type === 'textNode'     ? 'text'     :
         n.type === 'frameNode'    ? 'frame'    : 'machine'
-      const newId = `${prefix}-${nodeCounter}`
+      const newId = uid(prefix)
       idMap.set(n.id, newId)
       return {
         ...n,

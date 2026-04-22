@@ -160,9 +160,36 @@ export function useConnectionHandler({ nodes, edges, rfInstance, onConnect, open
       const sourceNode = nodes.find((n) => n.id === source)
       const targetNode = nodes.find((n) => n.id === target)
 
-      // Logistics nodes (splitter/merger) accept any connection
-      if (isLogisticsNode(sourceNode?.type) || isLogisticsNode(targetNode?.type)) return true
+      // Merger input: always accept — any part can enter a merger
+      if (targetNode?.type === 'mergerNode') return true
 
+      // Merger output → machine input: validate part match
+      if (sourceNode?.type === 'mergerNode' && targetNode?.type === 'machineNode') {
+        if (!targetHandle) return true
+        const targetIdx = parseInt(targetHandle.replace('in-', ''), 10)
+        const targetPart = targetNode.data.recipe?.inputs[targetIdx]?.part
+        if (!targetPart) return true // target has no recipe yet — allow
+        const sourceParts = inferPartsFromUpstream(source, sourceHandle ?? 'out-0', nodes, edges)
+        return sourceParts.length === 0 || sourceParts.includes(targetPart)
+      }
+
+      // Splitter input: always accept any source
+      if (targetNode?.type === 'splitterNode') return true
+
+      // Splitter output → machine input: must match the part flowing through the splitter
+      if (sourceNode?.type === 'splitterNode' && targetNode?.type === 'machineNode') {
+        if (!targetHandle) return true
+        const targetIdx = parseInt(targetHandle.replace('in-', ''), 10)
+        const targetPart = targetNode.data.recipe?.inputs[targetIdx]?.part
+        if (!targetPart) return true // target has no recipe yet — allow
+        const sourceParts = inferPartsFromUpstream(source, sourceHandle ?? 'out-0', nodes, edges)
+        return sourceParts.length === 0 || sourceParts.includes(targetPart)
+      }
+
+      // Splitter output → splitter/merger: allow (logistics chain)
+      if (sourceNode?.type === 'splitterNode' && isLogisticsNode(targetNode?.type)) return true
+
+      // Machine → machine: strict part match
       const sourceData = sourceNode?.type === 'machineNode' ? sourceNode.data : null
       const targetData = targetNode?.type === 'machineNode' ? targetNode.data : null
       if (!sourceData?.recipe || !targetData?.recipe) return false
@@ -175,7 +202,7 @@ export function useConnectionHandler({ nodes, edges, rfInstance, onConnect, open
       const targetPart = targetData.recipe.inputs[targetIdx]?.part
       return !!sourcePart && !!targetPart && sourcePart === targetPart
     },
-    [nodes]
+    [nodes, edges]
   )
 
   return { handleConnect, handleConnectStart, handleConnectEnd, isValidConnection, menuOpenedFromDrag }

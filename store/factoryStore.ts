@@ -12,9 +12,9 @@ import {
   type XYPosition,
 } from '@xyflow/react'
 import type { Machine, ParsedRecipe } from '@/lib/types/game'
-import type { MachineNodeData, MachineNode, SplitterNode, MergerNode, TextNode, FrameNode, FactoryNode, MenuContext, ClipboardData, HistoryEntry } from '@/lib/types/store'
+import type { MachineNodeData, MachineNode, SplitterNode, MergerNode, StorageNode, TextNode, FrameNode, FactoryNode, MenuContext, ClipboardData, HistoryEntry } from '@/lib/types/store'
 
-export type { MachineNodeData, MachineNode, SplitterNode, MergerNode, TextNode, FrameNode, FactoryNode, MenuContext }
+export type { MachineNodeData, MachineNode, SplitterNode, MergerNode, StorageNode, TextNode, FrameNode, FactoryNode, MenuContext }
 
 const COMPUTED_KEYS = new Set<keyof MachineNodeData>(['incomingSupply', 'outgoingDemand'])
 
@@ -43,8 +43,9 @@ type FactoryStore = {
   addSplitterNode: (flowPosition: XYPosition) => string
   addMergerNode: (flowPosition: XYPosition) => string
   setRecipe: (nodeId: string, recipe: ParsedRecipe) => void
-  setNodeConfig: (nodeId: string, config: Partial<Pick<MachineNodeData, 'nMachines' | 'clockSpeed' | 'minerVariant' | 'minerCapacity' | 'outputRateOverride' | 'incomingSupply' | 'outgoingDemand'>>) => void
+  setNodeConfig: (nodeId: string, config: Partial<Pick<MachineNodeData, 'nMachines' | 'clockSpeed' | 'minerVariant' | 'minerCapacity' | 'outputRateOverride' | 'incomingSupply' | 'outgoingDemand'>> & { incomingRatesByPart?: Record<string, number> }) => void
 
+  addStorageNode: (flowPosition: XYPosition) => string
   addTextNode: (flowPosition: XYPosition) => string
   addFrameNode: (flowPosition: XYPosition, width?: number, height?: number) => string
   setTextNodeContent: (nodeId: string, text: string) => void
@@ -251,6 +252,19 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       history: [...history.slice(-49), { nodes: deepCopyNodes(nodes), edges: shallowCopyEdges(edges) }],
       future: future.slice(1),
     })
+  },
+
+  addStorageNode: (flowPosition) => {
+    get()._pushHistory()
+    const id = uid('storage')
+    const newNode: StorageNode = {
+      id,
+      type: 'storageNode',
+      position: flowPosition,
+      data: {},
+    }
+    set((state) => ({ nodes: [...state.nodes, newNode] }))
+    return id
   },
 
   addTextNode: (flowPosition) => {

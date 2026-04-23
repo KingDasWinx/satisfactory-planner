@@ -5,12 +5,15 @@ import type { Edge } from '@xyflow/react'
 import type { FactoryNode } from '@/lib/types/store'
 import type { MultiMachine } from '@/lib/types/game'
 import { calcNodeRates, edgeSufficiencyColor, calcSplitterDistribution } from '@/lib/flowCalc'
+import { inferRatesByPartFromUpstream } from '@/lib/utils/inferParts'
 import { fmt } from '@/lib/utils/format'
 
 type EdgeFlowResult = {
   coloredEdges: Edge[]
   incomingSupply: Map<string, number[]>
   outgoingDemand: Map<string, number[]>
+  incomingRatesByPart: Map<string, Record<string, number>>
+  outgoingRatesByPart: Map<string, Record<string, number>>
 }
 
 export function useEdgeColors(
@@ -35,6 +38,14 @@ export function useEdgeColors(
       outputEdgeCount.set(key, (outputEdgeCount.get(key) ?? 0) + 1)
     }
 
+    // Count edges per (target, targetHandle) — demand is shared among all suppliers of the same handle
+    const inputEdgeCount = new Map<string, number>()
+    for (const edge of edges) {
+      if (!edge.targetHandle) continue
+      const key = `${edge.target}::${edge.targetHandle}`
+      inputEdgeCount.set(key, (inputEdgeCount.get(key) ?? 0) + 1)
+    }
+
     // Pass 2: compute rates for splitter/merger nodes (depend on graph topology)
     for (const node of nodes) {
       if (node.type === 'splitterNode') {
@@ -56,7 +67,8 @@ export function useEdgeColors(
           const totalDemand = outEdges.reduce((acc, e) => {
             const targetRates = rateMap.get(e.target)
             const targetIdx = parseInt((e.targetHandle ?? '0').replace('in-', ''), 10)
-            return acc + (targetRates?.inputs[targetIdx] ?? 0)
+            const fanIn = inputEdgeCount.get(`${e.target}::${e.targetHandle}`) ?? 1
+            return acc + (targetRates?.inputs[targetIdx] ?? 0) / fanIn
           }, 0)
           connectedIndices.push(i)
           connectedDemands.push(totalDemand > 0 ? totalDemand : Infinity)
@@ -92,7 +104,8 @@ export function useEdgeColors(
         const totalDemand = outEdges.reduce((acc, e) => {
           const targetRates = rateMap.get(e.target)
           const targetIdx = parseInt((e.targetHandle ?? '0').replace('in-', ''), 10)
-          return acc + (targetRates?.inputs[targetIdx] ?? 0)
+          const fanIn = inputEdgeCount.get(`${e.target}::${e.targetHandle}`) ?? 1
+          return acc + (targetRates?.inputs[targetIdx] ?? 0) / fanIn
         }, 0)
 
         rateMap.set(node.id, {
@@ -111,11 +124,78 @@ export function useEdgeColors(
           inputRates.push((sourceRates?.outputs[sourceIdx] ?? 0) / fanOut)
         }
         rateMap.set(node.id, { inputs: inputRates, outputs: [totalInput] })
+      } else if (node.type === 'storageNode') {
+        // Build a per-part supply map from all incoming edges
+        const inputEdges = edges.filter(e => e.target === node.id && e.targetHandle === 'in-0')
+        const supplyByPart: Record<string, number> = {}
+        let totalSupply = 0
+        for (const inputEdge of inputEdges) {
+          const ratesByPart = inferRatesByPartFromUpstream(
+            inputEdge.source, inputEdge.sourceHandle ?? 'out-0',
+            nodes, edges, rateMap, outputEdgeCount,
+          )
+          for (const [part, rate] of Object.entries(ratesByPart)) {
+            supplyByPart[part] = (supplyByPart[part] ?? 0) + rate
+            totalSupply += rate
+          }
+        }
+
+        // For each output edge, find what part the downstream machine needs,
+        // then distribute only that part's supply among edges requesting it.
+        const outEdges = edges.filter(e => e.source === node.id && e.sourceHandle === 'out-0')
+
+        // Group output edges by the part they consume
+        const edgesByPart: Record<string, { edgeId: string; demand: number }[]> = {}
+        for (const e of outEdges) {
+          const targetRates = rateMap.get(e.target)
+          const targetIdx = parseInt((e.targetHandle ?? '0').replace('in-', ''), 10)
+          const fanIn = inputEdgeCount.get(`${e.target}::${e.targetHandle}`) ?? 1
+          const demand = (targetRates?.inputs[targetIdx] ?? 0) / fanIn
+          // Infer the part this downstream node needs
+          const targetNode = nodes.find(n => n.id === e.target)
+          let part: string | undefined
+          if (targetNode?.type === 'machineNode') {
+            part = targetNode.data.recipe?.inputs[targetIdx]?.part
+          }
+          if (!part) continue
+          if (!edgesByPart[part]) edgesByPart[part] = []
+          edgesByPart[part].push({ edgeId: e.id, demand })
+        }
+
+        // Distribute per-part supply across the edges that need each part
+        const outputsByEdge: Record<string, number> = {}
+        const actualOutByPart: Record<string, number> = {}   // what actually exits (≤ supply)
+        const totalDemandByPart: Record<string, number> = {} // what downstream wants
+        for (const [part, consumers] of Object.entries(edgesByPart)) {
+          const available = supplyByPart[part] ?? 0
+          const demands = consumers.map(c => c.demand > 0 ? c.demand : Infinity)
+          const dist = calcSplitterDistribution(available, demands)
+          consumers.forEach((c, i) => { outputsByEdge[c.edgeId] = dist[i] ?? 0 })
+          actualOutByPart[part] = dist.reduce((s, v) => s + v, 0)
+          totalDemandByPart[part] = consumers.reduce((s, c) => s + (isFinite(c.demand) ? c.demand : 0), 0)
+        }
+
+        rateMap.set(node.id, {
+          inputs: [totalSupply],
+          outputs: [Object.values(outputsByEdge).reduce((s, v) => s + v, 0)],
+          supplyByPart,
+          actualOutByPart,
+          totalDemandByPart,
+          outputsByEdge,
+        } as {
+          inputs: number[]; outputs: number[]
+          supplyByPart: Record<string, number>
+          actualOutByPart: Record<string, number>
+          totalDemandByPart: Record<string, number>
+          outputsByEdge: Record<string, number>
+        })
       }
     }
 
     const incomingSupply = new Map<string, number[]>()
     const outgoingDemand = new Map<string, number[]>()
+    const incomingRatesByPart = new Map<string, Record<string, number>>()
+    const outgoingRatesByPart = new Map<string, Record<string, number>>()
 
     const coloredEdges = edges.map((edge) => {
       if (!edge.sourceHandle || !edge.targetHandle) return { ...edge, animated: true }
@@ -132,6 +212,10 @@ export function useEdgeColors(
       if (sourceNode?.type === 'splitterNode') {
         // Splitter outputs are already per-handle (no fan-out division)
         supplyThisEdge = sourceRates?.outputs[sourceIdx] ?? 0
+      } else if (sourceNode?.type === 'storageNode') {
+        // Storage pre-computes per-edge allocation keyed by edge.id
+        const sr = sourceRates as { outputsByEdge?: Record<string, number> } | undefined
+        supplyThisEdge = sr?.outputsByEdge?.[edge.id] ?? 0
       } else {
         const totalSupply = sourceRates?.outputs[sourceIdx] ?? 0
         const fanOut = outputEdgeCount.get(`${edge.source}::${edge.sourceHandle}`) ?? 1
@@ -146,8 +230,30 @@ export function useEdgeColors(
         demand = splitterDemand !== undefined && splitterDemand > 0 ? splitterDemand : supplyThisEdge
       } else if (targetNode?.type === 'mergerNode') {
         demand = supplyThisEdge
+      } else if (targetNode?.type === 'storageNode') {
+        // If this part is in deficit downstream (demand > supply), signal the upstream.
+        // Otherwise the input edge is green — storage accepts whatever arrives.
+        const sr = targetRates as { supplyByPart?: Record<string, number>; totalDemandByPart?: Record<string, number> } | undefined
+        if (sr?.supplyByPart && sr?.totalDemandByPart && edge.sourceHandle) {
+          const edgeParts = inferRatesByPartFromUpstream(edge.source, edge.sourceHandle, nodes, edges, rateMap, outputEdgeCount)
+          // Find the dominant part on this edge and check if storage is in deficit for it
+          let worstRatio = 1
+          for (const part of Object.keys(edgeParts)) {
+            const partDemand = sr.totalDemandByPart[part] ?? 0
+            const partSupply = sr.supplyByPart[part] ?? 0
+            if (partDemand > 0 && partSupply < partDemand) {
+              const ratio = partSupply / partDemand
+              if (ratio < worstRatio) worstRatio = ratio
+            }
+          }
+          demand = worstRatio < 1 ? supplyThisEdge / worstRatio : supplyThisEdge
+        } else {
+          demand = supplyThisEdge
+        }
       } else {
-        demand = targetRates?.inputs[targetIdx] ?? 0
+        const totalDemand = targetRates?.inputs[targetIdx] ?? 0
+        const fanIn = inputEdgeCount.get(`${edge.target}::${edge.targetHandle}`) ?? 1
+        demand = totalDemand / fanIn
       }
 
       const color = edgeSufficiencyColor(supplyThisEdge, demand)
@@ -159,6 +265,22 @@ export function useEdgeColors(
       if (!outgoingDemand.has(edge.source)) outgoingDemand.set(edge.source, [])
       const sArr = outgoingDemand.get(edge.source)!
       sArr[sourceIdx] = (sArr[sourceIdx] ?? 0) + demand
+
+      // Populate rates-by-part maps for storage nodes
+      if (sourceNode?.type === 'storageNode') {
+        const sr = sourceRates as { supplyByPart?: Record<string, number>; actualOutByPart?: Record<string, number> } | undefined
+        if (sr?.supplyByPart) incomingRatesByPart.set(edge.source, sr.supplyByPart)
+        if (sr?.actualOutByPart) outgoingRatesByPart.set(edge.source, sr.actualOutByPart)
+      } else if (targetNode?.type === 'storageNode' && edge.sourceHandle) {
+        const ratesByPart = inferRatesByPartFromUpstream(
+          edge.source, edge.sourceHandle, nodes, edges, rateMap, outputEdgeCount,
+        )
+        const existing = incomingRatesByPart.get(edge.target) ?? {}
+        for (const [part, rate] of Object.entries(ratesByPart)) {
+          existing[part] = (existing[part] ?? 0) + rate
+        }
+        incomingRatesByPart.set(edge.target, existing)
+      }
 
       const label = supplyThisEdge > 0 ? `${fmt(supplyThisEdge)}/m` : undefined
       const strokeWidth = edge.selected ? 4 : 2
@@ -173,6 +295,6 @@ export function useEdgeColors(
       }
     })
 
-    return { coloredEdges, incomingSupply, outgoingDemand }
+    return { coloredEdges, incomingSupply, outgoingDemand, incomingRatesByPart, outgoingRatesByPart }
   }, [edges, nodes, multiMachines])
 }

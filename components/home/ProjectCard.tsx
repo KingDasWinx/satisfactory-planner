@@ -6,6 +6,7 @@ import { ReactFlow, Background, BackgroundVariant } from '@xyflow/react'
 import { MachineNode } from '@/components/nodes/MachineNode'
 import { SplitterNode } from '@/components/nodes/SplitterNode'
 import { MergerNode } from '@/components/nodes/MergerNode'
+import { StorageNode } from '@/components/nodes/StorageNode'
 import { TextNode } from '@/components/nodes/TextNode'
 import { FrameNode } from '@/components/nodes/FrameNode'
 import { MultiMachinesProvider } from '@/lib/gameDataContext'
@@ -17,6 +18,7 @@ const nodeTypes = {
   machineNode: MachineNode,
   splitterNode: SplitterNode,
   mergerNode: MergerNode,
+  storageNode: StorageNode,
   textNode: TextNode,
   frameNode: FrameNode,
 }

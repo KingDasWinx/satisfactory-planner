@@ -30,6 +30,14 @@ export type MergerNodeData = {
 
 export type MergerNode = Node<MergerNodeData, 'mergerNode'>
 
+export type StorageNodeData = {
+  incomingSupply?: number[]
+  outgoingDemand?: number[]
+  incomingRatesByPart?: Record<string, number>
+  outgoingRatesByPart?: Record<string, number>
+}
+export type StorageNode = Node<StorageNodeData, 'storageNode'>
+
 export type TextNodeData = {
   text: string
   fontSize?: number
@@ -44,7 +52,7 @@ export type FrameNodeData = {
 }
 export type FrameNode = Node<FrameNodeData, 'frameNode'>
 
-export type FactoryNode = MachineNode | SplitterNode | MergerNode | TextNode | FrameNode
+export type FactoryNode = MachineNode | SplitterNode | MergerNode | StorageNode | TextNode | FrameNode
 
 export type MenuContext =
   | { type: 'canvas'; position: XYPosition; flowPosition: XYPosition }

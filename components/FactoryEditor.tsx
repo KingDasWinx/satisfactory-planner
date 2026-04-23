@@ -12,6 +12,7 @@ import { useProjectStore } from '@/store/projectStore'
 import { MachineNode } from '@/components/nodes/MachineNode'
 import { SplitterNode } from '@/components/nodes/SplitterNode'
 import { MergerNode } from '@/components/nodes/MergerNode'
+import { StorageNode } from '@/components/nodes/StorageNode'
 import { TextNode } from '@/components/nodes/TextNode'
 import { FrameNode } from '@/components/nodes/FrameNode'
 import { GhostNode } from '@/components/nodes/GhostNode'
@@ -32,6 +33,7 @@ const nodeTypes = {
   machineNode: MachineNode,
   splitterNode: SplitterNode,
   mergerNode: MergerNode,
+  storageNode: StorageNode,
   textNode: TextNode,
   frameNode: FrameNode,
 }
@@ -115,8 +117,8 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
 
   useAutoSave({ rfInstance })
 
-  const { coloredEdges, incomingSupply, outgoingDemand } = useEdgeColors(nodes, edges, multiMachines)
-  useFlowSync({ nodes, incomingSupply, outgoingDemand, setNodeConfig })
+  const { coloredEdges, incomingSupply, outgoingDemand, incomingRatesByPart, outgoingRatesByPart } = useEdgeColors(nodes, edges, multiMachines)
+  useFlowSync({ nodes, incomingSupply, outgoingDemand, incomingRatesByPart, outgoingRatesByPart, setNodeConfig })
 
   const { handleConnect, handleConnectStart, handleConnectEnd, isValidConnection, menuOpenedFromDrag } =
     useConnectionHandler({ nodes, edges, rfInstance, onConnect, openMenu })

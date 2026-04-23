@@ -12,6 +12,7 @@ type SearchMenuProps = {
 const SPECIAL_NODES = [
   { id: 'splitter', label: 'Splitter', icon: '⑃', description: '1 entrada → 3 saídas' },
   { id: 'merger',  label: 'Merger',  icon: '⑄', description: '3 entradas → 1 saída' },
+  { id: 'storage', label: 'Storage', icon: '▤',  description: '1 entrada → 1 saída' },
 ] as const
 
 const MARGIN = 12 // min distance from viewport edge
@@ -22,6 +23,7 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
   const addRecipeNode = useFactoryStore((s) => s.addRecipeNode)
   const addSplitterNode = useFactoryStore((s) => s.addSplitterNode)
   const addMergerNode = useFactoryStore((s) => s.addMergerNode)
+  const addStorageNode = useFactoryStore((s) => s.addStorageNode)
   const onConnect = useFactoryStore((s) => s.onConnect)
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -148,9 +150,12 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
     return { x: menu!.nodeFlowPosition.x + NODE_WIDTH + NODE_GAP, y: menu!.nodeFlowPosition.y }
   }
 
-  function selectSpecialNode(nodeId: 'splitter' | 'merger') {
+  function selectSpecialNode(nodeId: 'splitter' | 'merger' | 'storage') {
     const flowPos = getFlowPos()
-    const newNodeId = nodeId === 'splitter' ? addSplitterNode(flowPos) : addMergerNode(flowPos)
+    const newNodeId =
+      nodeId === 'splitter' ? addSplitterNode(flowPos) :
+      nodeId === 'merger'   ? addMergerNode(flowPos)   :
+                              addStorageNode(flowPos)
 
     if (menu!.type === 'input') {
       onConnect({ source: newNodeId, sourceHandle: 'out-0', target: menu!.nodeId, targetHandle: menu!.handleId })

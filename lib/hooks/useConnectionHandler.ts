@@ -3,6 +3,7 @@
 import { useCallback, useRef } from 'react'
 import type { Edge, ReactFlowInstance, OnConnect, OnConnectStart, OnConnectEnd, Connection } from '@xyflow/react'
 import type { FactoryNode, MenuContext } from '@/lib/types/store'
+import { inferPartsFromUpstream } from '@/lib/utils/inferParts'
 
 type ConnectionHandlerProps = {
   nodes: FactoryNode[]
@@ -13,41 +14,7 @@ type ConnectionHandlerProps = {
 }
 
 function isLogisticsNode(type: string | undefined) {
-  return type === 'splitterNode' || type === 'mergerNode'
-}
-
-// Collects all unique parts flowing out of a given source handle, recursing through logistics nodes.
-// Uses a visited set (nodeId::handle) to prevent infinite loops in cyclic graphs.
-function inferPartsFromUpstream(
-  nodeId: string,
-  sourceHandle: string,
-  nodes: FactoryNode[],
-  edges: Edge[],
-  visited = new Set<string>(),
-): string[] {
-  const key = `${nodeId}::${sourceHandle}`
-  if (visited.has(key)) return []
-  visited.add(key)
-
-  const node = nodes.find(n => n.id === nodeId)
-  if (!node) return []
-
-  if (node.type === 'machineNode') {
-    const idx = parseInt(sourceHandle.replace('out-', ''), 10)
-    const part = node.data.recipe?.outputs[idx]?.part
-    return part ? [part] : []
-  }
-
-  // For logistics nodes walk ALL incoming edges and union the parts
-  const inEdges = edges.filter(e => e.target === nodeId)
-  const parts = new Set<string>()
-  for (const edge of inEdges) {
-    if (!edge.source || !edge.sourceHandle) continue
-    for (const p of inferPartsFromUpstream(edge.source, edge.sourceHandle, nodes, edges, visited)) {
-      parts.add(p)
-    }
-  }
-  return [...parts]
+  return type === 'splitterNode' || type === 'mergerNode' || type === 'storageNode'
 }
 
 export function useConnectionHandler({ nodes, edges, rfInstance, onConnect, openMenu }: ConnectionHandlerProps) {
@@ -186,8 +153,24 @@ export function useConnectionHandler({ nodes, edges, rfInstance, onConnect, open
         return sourceParts.length === 0 || sourceParts.includes(targetPart)
       }
 
-      // Splitter output → splitter/merger: allow (logistics chain)
+      // Splitter output → splitter/merger/storage: allow (logistics chain)
       if (sourceNode?.type === 'splitterNode' && isLogisticsNode(targetNode?.type)) return true
+
+      // Storage input: always accept any source
+      if (targetNode?.type === 'storageNode') return true
+
+      // Storage output → machine input: validate part match
+      if (sourceNode?.type === 'storageNode' && targetNode?.type === 'machineNode') {
+        if (!targetHandle) return true
+        const targetIdx = parseInt(targetHandle.replace('in-', ''), 10)
+        const targetPart = targetNode.data.recipe?.inputs[targetIdx]?.part
+        if (!targetPart) return true
+        const sourceParts = inferPartsFromUpstream(source, sourceHandle ?? 'out-0', nodes, edges)
+        return sourceParts.length === 0 || sourceParts.includes(targetPart)
+      }
+
+      // Storage output → logistics chain: allow
+      if (sourceNode?.type === 'storageNode' && isLogisticsNode(targetNode?.type)) return true
 
       // Machine → machine: strict part match
       const sourceData = sourceNode?.type === 'machineNode' ? sourceNode.data : null

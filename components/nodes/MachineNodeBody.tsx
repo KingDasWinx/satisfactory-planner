@@ -12,12 +12,14 @@ import type { ParsedRecipe } from '@/lib/types/game'
 interface MachineNodeBodyProps {
   id: string
   data: MachineNodeData
-  rates: NodeRates
+  baseRates: NodeRates
+  effectiveRates: NodeRates
   isExtractor: boolean
 }
 
-export function MachineNodeBody({ id, data, rates, isExtractor }: MachineNodeBodyProps) {
-  const { recipe, availableRecipes, nMachines, clockSpeed, incomingSupply, outgoingDemand } = data
+export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtractor }: MachineNodeBodyProps) {
+  const { recipe, availableRecipes, nMachines, autoNMachines, clockSpeed, incomingSupply, incomingPotential, outgoingDemand } = data
+  const displayMachines = autoNMachines ?? nMachines
   const setRecipe = useFactoryStore((s) => s.setRecipe)
   const setNodeConfig = useFactoryStore((s) => s.setNodeConfig)
   const [recipeOpen, setRecipeOpen] = useState(false)
@@ -57,8 +59,15 @@ export function MachineNodeBody({ id, data, rates, isExtractor }: MachineNodeBod
             <span className="text-slate-500 shrink-0">{recipeOpen ? '▲' : '▼'}</span>
           )}
         </button>
-        <span className="text-xs text-slate-400 shrink-0 bg-slate-800 rounded px-1.5 py-0.5">
-          ×{nMachines} · {Math.round(clockSpeed * 100)}%
+        <span
+          className="text-xs text-slate-400 shrink-0 bg-slate-800 rounded px-1.5 py-0.5"
+          title={
+            autoNMachines !== undefined
+              ? `Máquinas efetivas (por gargalo): ${displayMachines} · Configurado: ${nMachines} · Clock ${Math.round(clockSpeed * 100)}%`
+              : `Configuração: ${nMachines} máquina(s) · Clock ${Math.round(clockSpeed * 100)}%`
+          }
+        >
+          ×{displayMachines} · {Math.round(clockSpeed * 100)}%
         </span>
       </div>
 
@@ -80,7 +89,7 @@ export function MachineNodeBody({ id, data, rates, isExtractor }: MachineNodeBod
       <div className="grid grid-cols-2 gap-x-3 text-xs">
         <div className="space-y-0.5">
           {inputs.map((ing, i) => {
-            const need = rates.inputs[i] ?? 0
+            const need = baseRates.inputs[i] ?? 0
             const got = incomingSupply?.[i]
             return (
               <div key={i} className="flex flex-col gap-0">
@@ -91,12 +100,21 @@ export function MachineNodeBody({ id, data, rates, isExtractor }: MachineNodeBod
                 <div className="flex items-center gap-1 pl-3 tabular-nums">
                   {got !== undefined ? (
                     <>
-                      <span className={got >= need ? 'text-emerald-400' : 'text-red-400'}>{fmt(got)}</span>
+                      <span
+                        className={got >= need ? 'text-emerald-400' : 'text-red-400'}
+                        title={`Recebendo ${fmt(got)}/m de ${fmt(need)}/m necessários`}
+                      >
+                        {fmt(got)}
+                      </span>
                       <span className="text-slate-600">/</span>
-                      <span className="text-slate-400">{fmt(need)}/m</span>
+                      <span className="text-slate-400" title={`Necessário (capacidade total): ${fmt(need)}/m`}>
+                        {fmt(need)}/m
+                      </span>
                     </>
                   ) : (
-                    <span className="text-slate-500">{fmt(need)}/m</span>
+                    <span className="text-slate-500" title={`Necessário (capacidade total): ${fmt(need)}/m`}>
+                      {fmt(need)}/m
+                    </span>
                   )}
                 </div>
               </div>
@@ -105,7 +123,7 @@ export function MachineNodeBody({ id, data, rates, isExtractor }: MachineNodeBod
         </div>
         <div className="space-y-0.5">
           {outputs.map((out, i) => {
-            const prod = rates.outputs[i] ?? 0
+            const prod = effectiveRates.outputs[i] ?? 0
             const consumed = outgoingDemand?.[i]
             return (
               <div key={i} className="flex flex-col gap-0">
@@ -134,12 +152,21 @@ export function MachineNodeBody({ id, data, rates, isExtractor }: MachineNodeBod
                     </>
                   ) : consumed !== undefined ? (
                     <>
-                      <span className="text-slate-400">{fmt(prod)}</span>
+                      <span className="text-slate-400" title={`Produção efetiva: ${fmt(prod)}/m`}>
+                        {fmt(prod)}
+                      </span>
                       <span className="text-slate-600">/</span>
-                      <span className={consumed <= prod ? 'text-emerald-400' : 'text-red-400'}>{fmt(consumed)}/m</span>
+                      <span
+                        className={consumed <= prod ? 'text-emerald-400' : 'text-red-400'}
+                        title={`Puxado pelo downstream: ${fmt(consumed)}/m`}
+                      >
+                        {fmt(consumed)}/m
+                      </span>
                     </>
                   ) : (
-                    <span className="text-slate-500">{fmt(prod)}/m</span>
+                    <span className="text-slate-500" title={`Produção efetiva: ${fmt(prod)}/m`}>
+                      {fmt(prod)}/m
+                    </span>
                   )}
                 </div>
               </div>
@@ -148,7 +175,38 @@ export function MachineNodeBody({ id, data, rates, isExtractor }: MachineNodeBod
         </div>
       </div>
 
-      <MachineNodeUtilBar inputs={inputs} rates={rates} incomingSupply={incomingSupply} />
+      {/* Capacidade sobrando na saída (ninguém está puxando tudo) */}
+      {!isExtractor && outputs.length > 0 && outgoingDemand && (
+        (() => {
+          let unusedTotal = 0
+          let unusedMachinesEq = 0
+          for (let i = 0; i < outputs.length; i++) {
+            const prod = effectiveRates.outputs[i] ?? 0
+            const pulled = outgoingDemand[i] ?? 0
+            const unused = Math.max(0, prod - pulled)
+            unusedTotal += unused
+            const perOneOut = nMachines > 0 ? (baseRates.outputs[i] ?? 0) / nMachines : 0
+            if (perOneOut > 0) unusedMachinesEq = Math.max(unusedMachinesEq, unused / perOneOut)
+          }
+          if (!(unusedTotal > 0.01)) return null
+          // Se a sobra equivale a ~0.00 máquina, não vale poluir a UI com isso.
+          if (unusedMachinesEq < 0.01) return null
+          return (
+            <div
+              className="mt-1 rounded border border-slate-700 bg-slate-800/60 px-2 py-1 text-[10px] text-slate-300"
+              title="Você tem capacidade de produção sobrando: o downstream não está puxando tudo."
+            >
+              <span className="text-slate-400 font-bold">Sobra</span>
+              <span className="text-slate-500"> · </span>
+              <span>{fmt(unusedTotal)}/m</span>
+              <span className="text-slate-500"> · </span>
+              <span>≈ -{fmt(unusedMachinesEq)} máquina (equiv.)</span>
+            </div>
+          )
+        })()
+      )}
+
+      <MachineNodeUtilBar inputs={inputs} rates={baseRates} incomingSupply={incomingSupply} />
     </div>
   )
 }

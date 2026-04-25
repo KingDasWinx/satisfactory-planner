@@ -1,5 +1,6 @@
 import type { Node, XYPosition, Edge } from '@xyflow/react'
 import type { Machine, ParsedRecipe } from '@/lib/types/game'
+import type { NodeRates } from '@/lib/types/flow'
 
 export type MachineNodeData = {
   machine: Machine
@@ -7,11 +8,23 @@ export type MachineNodeData = {
   availableRecipes: ParsedRecipe[]
   nMachines: number
   clockSpeed: number
+  // Computed: effective machine count based on available input (can be fractional).
+  autoNMachines?: number
+  // Persisted: if true, this node stops receiving automatic nMachines updates
+  // after the user manually edits quantity/clock/overrides.
+  autoLocked?: boolean
+  // Marker for nodes created by the magic planner (used for one-time auto adjustments).
+  createdByMagic?: boolean
+  // Computed: prevents re-applying the auto->config promotion repeatedly.
+  magicAutoApplied?: boolean
   minerVariant?: string
   minerCapacity?: string
   outputRateOverride?: number
   incomingSupply?: number[]
   outgoingDemand?: number[]
+  incomingPotential?: number[]
+  effectiveRates?: NodeRates
+  efficiency?: number
 }
 
 export type MachineNode = Node<MachineNodeData, 'machineNode'>
@@ -58,6 +71,9 @@ export type MenuContext =
   | { type: 'canvas'; position: XYPosition; flowPosition: XYPosition }
   | { type: 'input'; nodeId: string; handleId: string; inputPart: string; position: XYPosition; nodeFlowPosition: XYPosition; dropFlowPosition?: XYPosition }
   | { type: 'output'; nodeId: string; handleId: string; outputPart: string; outputParts: string[]; position: XYPosition; nodeFlowPosition: XYPosition; dropFlowPosition?: XYPosition }
+  | { type: 'context'; position: XYPosition; flowPosition: XYPosition }
+  | { type: 'nodeContext'; nodeId: string; position: XYPosition; flowPosition: XYPosition }
+  | { type: 'magicWizard'; nodeId: string; position: XYPosition }
 
 export type ClipboardData = {
   nodes: FactoryNode[]

@@ -42,7 +42,9 @@ export function MergerNode({ data, selected }: MergerNodeProps) {
         <span className="text-emerald-400 font-bold">⑄</span>
         <span className="text-xs font-semibold text-emerald-300">Merger</span>
         {totalOut > 0 && (
-          <span className="ml-auto text-[10px] text-slate-400">{fmt(totalOut)}/m</span>
+          <span className="ml-auto text-[10px] text-slate-400" title={`Saída total: ${fmt(totalOut)}/m`}>
+            {fmt(totalOut)}/m
+          </span>
         )}
       </div>
 
@@ -51,7 +53,7 @@ export function MergerNode({ data, selected }: MergerNodeProps) {
         const rate = ins[i] ?? 0
         return (
           <div key={i} className="h-8 flex items-center px-3 border-t border-slate-800/60">
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px] text-slate-400" title={rate > 0 ? `Entrada ${i}: ${fmt(rate)}/m` : `Entrada ${i}: —`}>
               {rate > 0 ? `${fmt(rate)}/m` : '—'}
             </span>
           </div>

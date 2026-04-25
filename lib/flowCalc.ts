@@ -91,6 +91,11 @@ export function machinesNeededFor(ratePerOne: number, targetPerMin: number): num
   return ratePerOne > 0 ? Math.ceil(targetPerMin / ratePerOne) : 0
 }
 
+// Fractional machines needed so that the handle's rate meets targetPerMin
+export function fractionalMachinesNeeded(ratePerOne: number, targetPerMin: number): number {
+  return ratePerOne > 0 ? targetPerMin / ratePerOne : 0
+}
+
 export function edgeSufficiencyColor(supply: number, demand: number): string {
   if (demand === 0) return '#64748b'
   const ratio = supply / demand

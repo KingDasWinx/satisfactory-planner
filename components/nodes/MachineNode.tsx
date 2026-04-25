@@ -31,7 +31,9 @@ function MachineNodeComponent({ id, data, selected }: NodeProps & { data: Machin
 
   const inputs = recipe?.inputs ?? []
   const outputs = recipe?.outputs ?? []
-  const rates = calcNodeRates(data, multiMachines)
+  // UI-only: when autoNMachines is present, show totals scaled by the effective machine count.
+  const baseRates = calcNodeRates(data.autoNMachines ? { ...data, nMachines: data.autoNMachines } : data, multiMachines)
+  const effectiveRates = data.effectiveRates ?? baseRates
 
   return (
     <div className={`min-w-[240px] rounded-lg border bg-slate-900 shadow-xl shadow-black/50 relative transition-all duration-200 ${selected ? 'border-amber-400 selected-node-glow' : 'border-amber-500/40'}`}>
@@ -47,7 +49,7 @@ function MachineNodeComponent({ id, data, selected }: NodeProps & { data: Machin
       ))}
 
       <MachineNodeHeader id={id} data={data} />
-      <MachineNodeBody id={id} data={data} rates={rates} isExtractor={isExtractor} />
+      <MachineNodeBody id={id} data={data} baseRates={baseRates} effectiveRates={effectiveRates} isExtractor={isExtractor} />
 
       {outputs.map((_, i) => (
         <Handle

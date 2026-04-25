@@ -49,7 +49,10 @@ export function SplitterNode({ data, selected }: SplitterNodeProps) {
         <span className="text-amber-400 font-bold">⑃</span>
         <span className="text-xs font-semibold text-amber-300">Splitter</span>
         {totalIn > 0 && (
-          <span className={`ml-auto text-[10px] tabular-nums ${isStarved ? 'text-red-400' : 'text-slate-400'}`}>
+          <span
+            className={`ml-auto text-[10px] tabular-nums ${isStarved ? 'text-red-400' : 'text-slate-400'}`}
+            title={`Entrada: ${fmt(totalIn)}/m${totalDemand > 0 ? ` · Demanda total: ${fmt(totalDemand)}/m` : ''}`}
+          >
             {fmt(totalIn)}{isStarved ? `/${fmt(totalDemand)}` : ''}/m
           </span>
         )}
@@ -66,11 +69,14 @@ export function SplitterNode({ data, selected }: SplitterNodeProps) {
         return (
           <div key={i} className="h-8 flex items-center justify-end px-3 border-t border-slate-800/60">
             {totalIn > 0 && demand > 0 ? (
-              <span className={`text-[10px] tabular-nums ${isBelowDemand ? 'text-red-400' : 'text-emerald-400'}`}>
+              <span
+                className={`text-[10px] tabular-nums ${isBelowDemand ? 'text-red-400' : 'text-emerald-400'}`}
+                title={`Saída ${i}: distribuído ${fmt(distributed)}/m · demanda ${fmt(demand)}/m`}
+              >
                 {fmt(distributed)}/{fmt(demand)}/m
               </span>
             ) : (
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-400" title={totalIn > 0 ? `Saída ${i}: ${fmt(distributed)}/m` : 'Sem entrada'}>
                 {totalIn > 0 ? `${fmt(distributed)}/m` : '—'}
               </span>
             )}

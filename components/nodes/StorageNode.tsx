@@ -64,11 +64,16 @@ export function StorageNode({ data, selected }: StorageNodeProps) {
       {/* Linha resumo: entrada / saída / saldo */}
       {hasData && (
         <div className="px-3 py-2 flex items-center gap-2 text-[10px] tabular-nums border-b border-slate-800/60">
-          <span className="text-blue-300">↓ {fmt(totalIn)}/m</span>
+          <span className="text-blue-300" title={`Entrada total: ${fmt(totalIn)}/m`}>↓ {fmt(totalIn)}/m</span>
           <span className="text-slate-600">·</span>
-          <span className="text-emerald-300">↑ {fmt(totalOut)}/m</span>
+          <span className="text-emerald-300" title={`Saída total: ${fmt(totalOut)}/m`}>↑ {fmt(totalOut)}/m</span>
           <span className="text-slate-600">·</span>
-          <span className={balanceColor}>{balance > 0 ? '+' : ''}{fmt(balance)}</span>
+          <span
+            className={balanceColor}
+            title={`Saldo (in - out): ${balance > 0 ? '+' : ''}${fmt(balance)}/m`}
+          >
+            {balance > 0 ? '+' : ''}{fmt(balance)}
+          </span>
         </div>
       )}
 
@@ -101,8 +106,8 @@ export function StorageNode({ data, selected }: StorageNodeProps) {
                   <div key={part} className="flex items-center justify-between px-3 py-1.5 text-[10px] border-t border-slate-800/40">
                     <span className="text-slate-300 truncate mr-2">{part}</span>
                     <div className="flex gap-3 shrink-0 tabular-nums">
-                      <span className="w-12 text-right text-blue-300">{fmt(inRate)}</span>
-                      <span className={`w-12 text-right ${deficit ? 'text-red-400' : 'text-emerald-400'}`}>{fmt(outRate)}</span>
+                      <span className="w-12 text-right text-blue-300" title={`Entrada ${part}: ${fmt(inRate)}/m`}>{fmt(inRate)}</span>
+                      <span className={`w-12 text-right ${deficit ? 'text-red-400' : 'text-emerald-400'}`} title={`Saída ${part}: ${fmt(outRate)}/m`}>{fmt(outRate)}</span>
                     </div>
                   </div>
                 )

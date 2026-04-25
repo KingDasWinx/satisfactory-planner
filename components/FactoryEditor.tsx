@@ -17,6 +17,8 @@ import { TextNode } from '@/components/nodes/TextNode'
 import { FrameNode } from '@/components/nodes/FrameNode'
 import { GhostNode } from '@/components/nodes/GhostNode'
 import { SearchMenu } from '@/components/panels/SearchMenu'
+import { ContextMenu } from '@/components/panels/ContextMenu'
+import { MagicPlannerWizard } from '@/components/panels/MagicPlannerWizard'
 import { ToolsBar } from '@/components/panels/ToolsBar'
 import { CanvasBackground } from '@/components/layout/CanvasBackground'
 import { MultiMachinesProvider } from '@/lib/gameDataContext'
@@ -117,13 +119,27 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
 
   useAutoSave({ rfInstance })
 
-  const { coloredEdges, incomingSupply, outgoingDemand, incomingRatesByPart, outgoingRatesByPart } = useEdgeColors(nodes, edges, multiMachines)
-  useFlowSync({ nodes, incomingSupply, outgoingDemand, incomingRatesByPart, outgoingRatesByPart, setNodeConfig })
+  const { coloredEdges, incomingSupply, outgoingDemand, incomingPotential, incomingRatesByPart, outgoingRatesByPart, effectiveRates, efficiencies, autoNMachines } =
+    useEdgeColors(nodes, edges, multiMachines)
+  useFlowSync({ nodes, incomingSupply, outgoingDemand, incomingPotential, incomingRatesByPart, outgoingRatesByPart, effectiveRates, efficiencies, autoNMachines, setNodeConfig })
 
   const { handleConnect, handleConnectStart, handleConnectEnd, isValidConnection, menuOpenedFromDrag } =
     useConnectionHandler({ nodes, edges, rfInstance, onConnect, openMenu })
 
   useKeyboardShortcuts()
+
+  useEffect(() => {
+    if (readOnly) return
+    function onCtx(e: MouseEvent) {
+      const target = e.target as HTMLElement | null
+      if (!target) return
+      if (target.closest('[data-reactflow]')) {
+        e.preventDefault()
+      }
+    }
+    window.addEventListener('contextmenu', onCtx, { capture: true })
+    return () => window.removeEventListener('contextmenu', onCtx, { capture: true } as unknown as boolean)
+  }, [readOnly])
 
   useEffect(() => {
     if (readOnly) return
@@ -278,6 +294,20 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
           onConnectEnd={readOnly ? undefined : handleConnectEnd}
           isValidConnection={readOnly ? undefined : isValidConnection}
           onPaneClick={onPaneClickWithDblDetect}
+          onPaneContextMenu={(e) => {
+            if (readOnly) return
+            e.preventDefault()
+            if (!rfInstance.current) return
+            const flowPosition = rfInstance.current.screenToFlowPosition({ x: e.clientX, y: e.clientY })
+            openMenu({ type: 'context', position: { x: e.clientX, y: e.clientY }, flowPosition })
+          }}
+          onNodeContextMenu={(e, node) => {
+            if (readOnly) return
+            e.preventDefault()
+            if (!rfInstance.current) return
+            const flowPosition = rfInstance.current.screenToFlowPosition({ x: e.clientX, y: e.clientY })
+            openMenu({ type: 'nodeContext', nodeId: node.id, position: { x: e.clientX, y: e.clientY }, flowPosition })
+          }}
           zoomOnDoubleClick={false}
           panOnDrag={readOnly || activeTool !== 'frame'}
           nodesDraggable={!readOnly}
@@ -351,6 +381,8 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
 
         {!readOnly && <GhostNode />}
         {!readOnly && <SearchMenu recipes={recipes} machines={machines} />}
+        {!readOnly && <ContextMenu />}
+        {!readOnly && <MagicPlannerWizard recipes={recipes} machines={machines} />}
       </div>
     </MultiMachinesProvider>
   )

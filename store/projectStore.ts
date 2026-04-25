@@ -45,7 +45,16 @@ function writeProjectData(data: ProjectData) {
 }
 
 // Campos computados que não devem ser persistidos
-const COMPUTED_KEYS = new Set(['incomingSupply', 'outgoingDemand'])
+const COMPUTED_KEYS = new Set([
+  'incomingSupply',
+  'outgoingDemand',
+  'incomingPotential',
+  'effectiveRates',
+  'efficiency',
+  'autoNMachines',
+  'magicAutoApplied',
+  'createdByMagic',
+])
 
 function stripComputed(nodes: FactoryNode[]): FactoryNode[] {
   return nodes.map((n) => {

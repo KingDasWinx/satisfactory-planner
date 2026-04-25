@@ -109,6 +109,7 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
   }, [closeMenu])
 
   if (!menu) return null
+  if (menu.type !== 'canvas' && menu.type !== 'input' && menu.type !== 'output') return null
 
   const machineMap = new Map(machines.map((m) => [m.name, m]))
 
@@ -140,14 +141,16 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
   })()
 
   function getFlowPos(): { x: number; y: number } {
-    if (menu!.type === 'canvas') return menu!.flowPosition
-    if ('dropFlowPosition' in menu! && menu!.dropFlowPosition) return menu!.dropFlowPosition
+    if (!menu) return { x: 0, y: 0 }
+    if (menu.type === 'canvas') return menu.flowPosition
+    if (menu.type !== 'input' && menu.type !== 'output') return { x: 0, y: 0 }
+    if (menu.dropFlowPosition) return menu.dropFlowPosition
     const NODE_WIDTH = 260
     const NODE_GAP = 60
-    if (menu!.type === 'input') {
-      return { x: menu!.nodeFlowPosition.x - NODE_WIDTH - NODE_GAP, y: menu!.nodeFlowPosition.y }
+    if (menu.type === 'input') {
+      return { x: menu.nodeFlowPosition.x - NODE_WIDTH - NODE_GAP, y: menu.nodeFlowPosition.y }
     }
-    return { x: menu!.nodeFlowPosition.x + NODE_WIDTH + NODE_GAP, y: menu!.nodeFlowPosition.y }
+    return { x: menu.nodeFlowPosition.x + NODE_WIDTH + NODE_GAP, y: menu.nodeFlowPosition.y }
   }
 
   function selectSpecialNode(nodeId: 'splitter' | 'merger' | 'storage') {

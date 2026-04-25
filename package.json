@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "@satisfactory-dev/docs.json.ts": "^0.17.3",
     "@tailwindcss/postcss": "^4.2.4",

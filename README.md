@@ -2,7 +2,7 @@
   <img src="docs/screenshots/banner.png" alt="Satisfactory Factory Planner" width="100%" />
 </div>
 
-### 🏭 Planeje suas fábricas de Satisfactory visualmente
+### 🏭 Plan your Satisfactory factories visually
 
 <div align="center">
 
@@ -15,57 +15,57 @@
 
 </div>
 
-**Satisfactory Factory Planner** é um editor visual de cadeias de produção para
-o jogo *Satisfactory*. Monte sua linha de montagem arrastando máquinas,
-conectando esteiras e tubulações, e veja taxas, eficiência e consumo de energia
-calculados em tempo real — tudo direto no navegador, sem backend.
+**Satisfactory Factory Planner** is a visual production-chain editor for the
+game *Satisfactory*. Build your assembly lines by dragging machines, connecting
+belts and pipes, and watch rates, efficiency, and power consumption update in
+real time — all in your browser, with no backend.
 
-- 🧩 **Editor de grafo interativo** — arraste, conecte e configure nós
-- ⚡ **Cálculo de fluxo em tempo real** — taxas, eficiência e energia
-- 🪄 **Magic Planner Wizard** — gera cadeias de produção automaticamente
-- 💾 **Múltiplos projetos** — tudo salvo localmente, sem login
-- 🖼️ **Exportação para PNG** — compartilhe seus blueprints
+- 🧩 **Interactive graph editor** — drag, connect, and configure nodes
+- ⚡ **Real-time flow calculation** — rates, efficiency, and power
+- 🪄 **Magic Planner Wizard** — auto-generates production chains
+- 💾 **Multiple projects** — saved locally, no login required
+- 🖼️ **PNG export** — share your blueprints
 
 ---
 
 ## 🎬 Demo
 
-> **Vídeo de demonstração**
+> **Demo video**
 >
 > https://github.com/user-attachments/assets/PLACEHOLDER-VIDEO-ID
 >
-> *Para hospedar: arraste o `.mp4` numa issue, PR ou comentário do GitHub —
-> ele gera uma URL `user-attachments` que você cola aqui.*
+> *To host: drag the `.mp4` into a GitHub issue, PR, or comment — GitHub will
+> generate a `user-attachments` URL that you can paste here.*
 
 <div align="center">
-  <img src="docs/screenshots/demo.gif" alt="Demo do editor em ação" width="85%" />
+  <img src="docs/screenshots/demo.gif" alt="Editor demo" width="85%" />
 </div>
 
 ---
 
-## ✨ Funcionalidades
+## ✨ Features
 
-### Editor de grafo
-
-<div align="center">
-  <img src="docs/screenshots/editor.png" alt="Editor de grafo" width="85%" />
-</div>
-
-- Nós suportados: **Máquinas**, **Splitters**, **Mergers**, **Storage**, **Texto** e **Frames**
-- Conexões coloridas por eficiência: verde ≥ 100%, amarelo 50–99%, vermelho < 50%
-- Atalhos de teclado, **undo / redo**, **auto-save** e clipboard interno
-- Menu de contexto e busca rápida para inserir novos nós
-
-### Configuração de máquina
+### Graph editor
 
 <div align="center">
-  <img src="docs/screenshots/machine-config.png" alt="Popup de configuração de máquina" width="60%" />
+  <img src="docs/screenshots/editor.png" alt="Graph editor" width="85%" />
 </div>
 
-- **Clock speed** de `0.01` a `2.5` (fórmula oficial: `P = P_base × clockSpeed^1.322`)
-- Quantidade de máquinas manual ou calculada automaticamente
-- Variantes de minerador (Mk.1 / Mk.2 / Mk.3) e sobreposição de saídas
-- Receitas alternativas filtradas por máquina
+- Supported nodes: **Machines**, **Splitters**, **Mergers**, **Storage**, **Text**, and **Frames**
+- Edges colored by efficiency: green ≥ 100%, yellow 50–99%, red < 50%
+- Keyboard shortcuts, **undo / redo**, **auto-save**, and internal clipboard
+- Context menu and quick search to insert new nodes
+
+### Machine configuration
+
+<div align="center">
+  <img src="docs/screenshots/machine-config.png" alt="Machine config popup" width="60%" />
+</div>
+
+- **Clock speed** from `0.01` to `2.5` (official formula: `P = P_base × clockSpeed^1.322`)
+- Manual or auto-calculated machine count
+- Miner variants (Mk.1 / Mk.2 / Mk.3) and output overrides
+- Alternate recipes filtered by machine
 
 ### Magic Planner Wizard
 
@@ -73,125 +73,125 @@ calculados em tempo real — tudo direto no navegador, sem backend.
   <img src="docs/screenshots/magic-planner.png" alt="Magic Planner Wizard" width="60%" />
 </div>
 
-Escolha uma peça-alvo e uma taxa desejada — o wizard monta a cadeia de
-produção inteira, do recurso bruto até o item final.
+Pick a target part and a desired rate — the wizard builds the entire production
+chain, from raw resource to final item.
 
-### Painel de projetos
+### Projects panel
 
-- Múltiplos projetos no mesmo navegador
-- Renomear, duplicar e excluir
-- Persistência em `localStorage` — nada sai do seu computador
+- Multiple projects in the same browser
+- Rename, duplicate, and delete
+- `localStorage` persistence — nothing leaves your machine
 
 ---
 
-## 🚀 Começando
+## 🚀 Getting Started
 
-### Pré-requisitos
+### Prerequisites
 
-- **Node.js** ≥ 18 (testado em v24)
+- **Node.js** ≥ 18 (tested on v24)
 - **npm**
 
-### Instalação
+### Installation
 
 ```bash
-git clone https://github.com/<seu-usuario>/satisfactory-planner.git
+git clone https://github.com/<your-username>/satisfactory-planner.git
 cd satisfactory-planner
 npm install
 npm run dev
 ```
 
-Abra **http://localhost:3000** no navegador.
+Open **http://localhost:3000** in your browser.
 
-### Scripts disponíveis
+### Available scripts
 
-| Comando | Descrição |
+| Command | Description |
 |---|---|
-| `npm run dev` | Servidor de desenvolvimento (hot reload) |
-| `npm run build` | Build de produção |
-| `npm run start` | Serve o build de produção |
-| `npm run cli` | Extrator de dados do jogo (não faz parte do app web) |
+| `npm run dev` | Development server (hot reload) |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run cli` | Game data extractor (not part of the web app) |
 
 ---
 
 ## 🏗️ Stack
 
-| Camada | Tecnologia |
+| Layer | Technology |
 |---|---|
 | Framework | Next.js 16 (App Router) |
 | UI | React 19 + Tailwind CSS 4 |
-| Grafo visual | [@xyflow/react](https://reactflow.dev/) 12 |
-| Estado global | Zustand 5 |
-| Linguagem | TypeScript 6 (`strict`) |
+| Visual graph | [@xyflow/react](https://reactflow.dev/) 12 |
+| Global state | Zustand 5 |
+| Language | TypeScript 6 (`strict`) |
 | Runtime | Node.js |
 
 ---
 
-## 📁 Estrutura
+## 📁 Structure
 
 ```
-├── app/                  # Rotas Next.js (App Router)
+├── app/                  # Next.js routes (App Router)
 ├── components/
-│   ├── nodes/            # Nós do grafo (Machine, Splitter, Merger, Storage, Text, Frame)
-│   ├── panels/           # Painéis flutuantes (busca, contexto, Magic Planner, projetos)
-│   ├── layout/           # Wrappers de layout
-│   └── FactoryEditor.tsx # Compositor principal do canvas
+│   ├── nodes/            # Graph nodes (Machine, Splitter, Merger, Storage, Text, Frame)
+│   ├── panels/           # Floating panels (search, context, Magic Planner, projects)
+│   ├── layout/           # Layout wrappers
+│   └── FactoryEditor.tsx # Main canvas compositor
 ├── lib/
-│   ├── types/            # Interfaces e tipos TypeScript
-│   ├── hooks/            # Custom hooks reutilizáveis
-│   ├── utils/            # Funções puras (export, cálculo de fluxo)
-│   ├── gameData.ts       # Loader server-side
-│   └── flowCalc.ts       # Fonte única de verdade dos cálculos
-├── store/                # Stores Zustand (factory, projects)
+│   ├── types/            # TypeScript interfaces and types
+│   ├── hooks/            # Reusable custom hooks
+│   ├── utils/            # Pure functions (export, flow calculation)
+│   ├── gameData.ts       # Server-side loader
+│   └── flowCalc.ts       # Single source of truth for calculations
+├── store/                # Zustand stores (factory, projects)
 ├── data/
-│   ├── game/             # game_data.json (já parseado)
-│   ├── Docs/             # JSONs de idioma do jogo
-│   └── scripts/          # Scripts de extração
-├── scripts/              # CLI de extração (fora do app)
-└── public/               # Assets estáticos
+│   ├── game/             # game_data.json (already parsed)
+│   ├── Docs/             # Game language JSONs
+│   └── scripts/          # Extraction scripts
+├── scripts/              # Extraction CLI (outside the app)
+└── public/               # Static assets
 ```
 
-Convenções detalhadas em [CLAUDE.md](CLAUDE.md).
+Detailed conventions in [CLAUDE.md](CLAUDE.md).
 
 ---
 
-## 🎮 Dados do jogo
+## 🎮 Game data
 
-Os dados em `data/game/game_data.json` são extraídos dos arquivos oficiais
-exportados por [@satisfactory-dev/docs.json.ts](https://www.npmjs.com/package/@satisfactory-dev/docs.json.ts).
-Para regenerar:
+The data in `data/game/game_data.json` is extracted from the official files
+exported by [@satisfactory-dev/docs.json.ts](https://www.npmjs.com/package/@satisfactory-dev/docs.json.ts).
+To regenerate:
 
 ```bash
 npm run cli
 ```
 
-O escopo cobre máquinas, receitas (incluindo alternativas), itens, prédios e
-metadados de potência/tier.
+Scope covers machines, recipes (including alternates), items, buildings, and
+power/tier metadata.
 
 ---
 
-## 🤝 Contribuindo
+## 🤝 Contributing
 
-Pull requests são bem-vindos! Antes de abrir um PR:
+Pull requests are welcome! Before opening a PR:
 
-1. Leia [CLAUDE.md](CLAUDE.md) — convenções de código, paleta de cores e organização de pastas
-2. Mantenha componentes ≤ 150 linhas e hooks ≤ 80 linhas
-3. Tipos sempre em `lib/types/`, nunca inline
-4. Mensagens de commit em inglês, no imperativo
+1. Read [CLAUDE.md](CLAUDE.md) — code conventions, color palette, and folder organization
+2. Keep components ≤ 150 lines and hooks ≤ 80 lines
+3. Types always in `lib/types/`, never inline
+4. Commit messages in English, imperative mood
 
 ---
 
-## 📄 Licença
+## 📄 License
 
-Distribuído sob a **GNU General Public License v3.0** (ou posterior).
-Veja [LICENSE](LICENSE) para o texto completo.
+Distributed under the **GNU General Public License v3.0** (or later).
+See [LICENSE](LICENSE) for the full text.
 
-> Este projeto **não é afiliado** à Coffee Stain Studios. *Satisfactory* é
-> marca registrada de seus respectivos donos.
+> This project is **not affiliated** with Coffee Stain Studios. *Satisfactory*
+> is a trademark of its respective owners.
 
 ---
 
 ## 🔗 Links
 
-- [Satisfactory (jogo oficial)](https://www.satisfactorygame.com/)
-- [@xyflow/react — biblioteca do grafo](https://reactflow.dev/)
-- [Issues](https://github.com/<seu-usuario>/satisfactory-planner/issues)
+- [Satisfactory (official game)](https://www.satisfactorygame.com/)
+- [@xyflow/react — graph library](https://reactflow.dev/)
+- [Issues](https://github.com/<your-username>/satisfactory-planner/issues)

@@ -95,6 +95,8 @@ type FactoryStore = {
   setFrameNodeLocked: (nodeId: string, locked: boolean) => void
 
   copyNodes: () => void
+  copyNode: (nodeId: string) => void
+  deleteNode: (nodeId: string) => void
   startPaste: () => void
   commitPaste: (flowPosition: XYPosition) => void
   cancelPaste: () => void
@@ -244,8 +246,24 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
           const dragging = (c as { dragging?: boolean }).dragging
           if (dragging === false) endedIds.add(c.id)
         }
+        if (endedIds.size > 0) {
+          const beforeById = new Map(applied.map((n) => [n.id, n.position] as const))
+          const after = constrainDraggedNodesLive(applied, endedIds)
+          for (const id of endedIds) {
+            const before = beforeById.get(id)
+            const afterPos = after.find((n) => n.id === id)?.position
+            if (!before || !afterPos) continue
+            const dx = afterPos.x - before.x
+            const dy = afterPos.y - before.y
+            if (dx !== 0 || dy !== 0) {
+              // eslint-disable-next-line no-console
+              console.log('[dragEndClamp]', { id, dx, dy, before, after: afterPos })
+            }
+          }
+          return { nodes: after, helperLines: null }
+        }
         return {
-          nodes: endedIds.size > 0 ? constrainDraggedNodesLive(applied, endedIds) : applied,
+          nodes: applied,
           helperLines: null,
         }
       }
@@ -953,14 +971,63 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     const selectedIds = new Set(toCopy.map(n => n.id))
     const internalEdges = edges.filter(e => selectedIds.has(e.source) && selectedIds.has(e.target))
 
-    const xs = toCopy.map(n => n.position.x)
-    const ys = toCopy.map(n => n.position.y)
-    const centroid = {
-      x: (Math.min(...xs) + Math.max(...xs)) / 2,
-      y: (Math.min(...ys) + Math.max(...ys)) / 2,
-    }
+    const minX = Math.min(...toCopy.map((n) => n.position.x))
+    const minY = Math.min(...toCopy.map((n) => n.position.y))
+    const maxX = Math.max(...toCopy.map((n) => n.position.x + estimateNodeSize(n).w))
+    const maxY = Math.max(...toCopy.map((n) => n.position.y + estimateNodeSize(n).h))
+    const centroid = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
 
     set({ clipboard: { nodes: deepCopyNodes(toCopy), edges: shallowCopyEdges(internalEdges), centroid } })
+  },
+
+  copyNode: (nodeId) => {
+    const { nodes, edges } = get()
+    const root = nodes.find((n) => n.id === nodeId)
+    if (!root) return
+
+    const toCopy: FactoryNode[] = [root]
+
+    // Mesmo comportamento do Ctrl+C: frame travado inclui nós contidos.
+    if (root.type === 'frameNode') {
+      const frameData = root.data as import('@/lib/types/store').FrameNodeData
+      if (frameData.locked) {
+        const fw = (root.style?.width as number | undefined) ?? 400
+        const fh = (root.style?.height as number | undefined) ?? 300
+        for (const other of nodes) {
+          if (other.id === root.id) continue
+          if (
+            other.position.x >= root.position.x &&
+            other.position.y >= root.position.y &&
+            other.position.x <= root.position.x + fw &&
+            other.position.y <= root.position.y + fh
+          ) {
+            toCopy.push(other)
+          }
+        }
+      }
+    }
+
+    const selectedIds = new Set(toCopy.map((n) => n.id))
+    const internalEdges = edges.filter((e) => selectedIds.has(e.source) && selectedIds.has(e.target))
+
+    const minX = Math.min(...toCopy.map((n) => n.position.x))
+    const minY = Math.min(...toCopy.map((n) => n.position.y))
+    const maxX = Math.max(...toCopy.map((n) => n.position.x + estimateNodeSize(n).w))
+    const maxY = Math.max(...toCopy.map((n) => n.position.y + estimateNodeSize(n).h))
+    const centroid = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
+
+    set({ clipboard: { nodes: deepCopyNodes(toCopy), edges: shallowCopyEdges(internalEdges), centroid } })
+  },
+
+  deleteNode: (nodeId) => {
+    const { nodes } = get()
+    if (!nodes.some((n) => n.id === nodeId)) return
+
+    get()._pushHistory()
+    set((state) => ({
+      nodes: state.nodes.filter((n) => n.id !== nodeId),
+      edges: state.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
+    }))
   },
 
   startPaste: () => {

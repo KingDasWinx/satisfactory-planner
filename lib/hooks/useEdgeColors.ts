@@ -390,15 +390,17 @@ export function useEdgeColors(
       const flow = edgeFlow.get(edge.id) ?? 0
       const demand = edgeDemand.get(edge.id) ?? 0
       const color = edgeSufficiencyColor(flow, demand)
-      const label = flow > 0 ? `${fmt(flow)}/m` : undefined
+      const labelText = `${fmt(flow)}/m`
       const strokeWidth = edge.selected ? 4 : 2
+      // Debug: edge label pipeline
+      // eslint-disable-next-line no-console
+      console.debug('[useEdgeColors][edge]', { id: edge.id, source: edge.source, sourceHandle: edge.sourceHandle, target: edge.target, targetHandle: edge.targetHandle, flow, demand, labelText })
       return {
         ...edge,
+        type: 'flowEdge',
         animated: true,
+        data: { ...(edge.data as Record<string, unknown> | undefined), labelText },
         style: { stroke: color, strokeWidth, filter: edge.selected ? `drop-shadow(0 0 4px ${color})` : undefined },
-        labelStyle: { fill: color, fontSize: 10, fontWeight: 600 },
-        labelBgStyle: { fill: '#0f172a', fillOpacity: 0.85 },
-        label,
       }
     })
 

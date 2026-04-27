@@ -16,6 +16,7 @@ import { StorageNode } from '@/components/nodes/StorageNode'
 import { TextNode } from '@/components/nodes/TextNode'
 import { FrameNode } from '@/components/nodes/FrameNode'
 import { GhostNode } from '@/components/nodes/GhostNode'
+import { FlowEdge } from '@/components/edges/FlowEdge'
 import { SearchMenu } from '@/components/panels/SearchMenu'
 import { ContextMenu } from '@/components/panels/ContextMenu'
 import { MagicPlannerWizard } from '@/components/panels/MagicPlannerWizard'
@@ -39,6 +40,10 @@ const nodeTypes = {
   storageNode: StorageNode,
   textNode: TextNode,
   frameNode: FrameNode,
+}
+
+const edgeTypes = {
+  flowEdge: FlowEdge,
 }
 
 type ActiveTool = 'pointer' | 'text' | 'frame'
@@ -85,6 +90,7 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
 
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const lastFlowMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  const lastScreenMousePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const isGhostActiveRef = useRef(isGhostActive)
   isGhostActiveRef.current = isGhostActive
 
@@ -161,14 +167,22 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
 
   useEffect(() => {
     function onGlobalMouseMove(e: MouseEvent) {
-      if (!isGhostActiveRef.current || !rfInstance.current) return
+      lastScreenMousePos.current = { x: e.clientX, y: e.clientY }
+      if (!rfInstance.current) return
       const flowPos = rfInstance.current.screenToFlowPosition({ x: e.clientX, y: e.clientY })
-      setGhostPosition(flowPos, { x: e.clientX, y: e.clientY })
       lastFlowMousePos.current = flowPos
+      if (!isGhostActiveRef.current) return
+      setGhostPosition(flowPos, { x: e.clientX, y: e.clientY })
     }
     window.addEventListener('mousemove', onGlobalMouseMove)
     return () => window.removeEventListener('mousemove', onGlobalMouseMove)
   }, [setGhostPosition])
+
+  useEffect(() => {
+    if (!isGhostActive || !rfInstance.current) return
+    // Ao ativar o ghost (Ctrl+V), posiciona imediatamente no mouse atual (sem precisar mover).
+    setGhostPosition(lastFlowMousePos.current, lastScreenMousePos.current)
+  }, [isGhostActive, setGhostPosition])
 
   useEffect(() => {
     if (readOnly) return
@@ -319,6 +333,7 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
           snapGrid={[20, 20]}
           onInit={(instance) => { rfInstance.current = instance as unknown as ReactFlowInstance }}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           deleteKeyCode={readOnly ? null : 'Delete'}
           minZoom={0.2}

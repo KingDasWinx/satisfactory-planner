@@ -43,7 +43,6 @@ export function GhostNode() {
             style={{
               left: `${centroidScreenX + deltaX}px`,
               top: `${centroidScreenY + deltaY}px`,
-              transform: 'translate(-50%, -50%)',
               opacity: 0.55,
             }}
           >

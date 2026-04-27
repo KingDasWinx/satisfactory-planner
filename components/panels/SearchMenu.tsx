@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useFactoryStore } from '@/store/factoryStore'
 import type { Machine, ParsedRecipe } from '@/lib/types/game'
+import { partNameToIconPath } from '@/lib/utils/iconName'
+import { getRecipePrimaryIconPart } from '@/lib/utils/recipeIcon'
 
 type SearchMenuProps = {
   recipes: ParsedRecipe[]
@@ -10,9 +12,9 @@ type SearchMenuProps = {
 }
 
 const SPECIAL_NODES = [
-  { id: 'splitter', label: 'Splitter', icon: '⑃', description: '1 entrada → 3 saídas' },
-  { id: 'merger',  label: 'Merger',  icon: '⑄', description: '3 entradas → 1 saída' },
-  { id: 'storage', label: 'Storage', icon: '▤',  description: '1 entrada → 1 saída' },
+  { id: 'splitter', label: 'Splitter', iconSrc: '/icons/Smart_Splitter.png', description: '1 entrada → 3 saídas' },
+  { id: 'merger', label: 'Merger', iconSrc: '/icons/Conveyor_Merger.png', description: '3 entradas → 1 saída' },
+  { id: 'storage', label: 'Storage', iconSrc: '/icons/Storage_Container.png', description: '1 entrada → 1 saída' },
 ] as const
 
 const MARGIN = 12 // min distance from viewport edge
@@ -244,7 +246,16 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
               onClick={() => selectSpecialNode(node.id)}
               className="flex flex-col items-center gap-1 px-2 py-3 hover:bg-slate-800 transition-colors rounded mx-1"
             >
-              <span className="text-2xl text-amber-400">{node.icon}</span>
+              <img
+                src={node.iconSrc}
+                alt={node.label}
+                className="h-9 w-9 object-contain"
+                draggable={false}
+                onError={(e) => {
+                  const img = e.currentTarget
+                  img.style.display = 'none'
+                }}
+              />
               <span className="text-xs font-semibold text-slate-300">{node.label}</span>
               <span className="text-[10px] text-slate-500 text-center leading-tight">{node.description}</span>
             </button>
@@ -271,6 +282,8 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
             )}
             {filteredRecipes.map((recipe) => {
               const machine = resolveMachine(recipe.machine)
+              const iconPart = getRecipePrimaryIconPart(recipe)
+              const iconSrc = iconPart ? partNameToIconPath(iconPart) : null
               return (
                 <button
                   key={recipe.name}
@@ -278,10 +291,24 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
                   className="w-full text-left px-4 py-2.5 hover:bg-slate-800 transition-colors group"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-slate-200 font-medium truncate group-hover:text-white">
-                      {recipe.alternate && <span className="text-purple-400 mr-1 text-xs">★</span>}
-                      {recipe.name}
-                    </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {iconSrc ? (
+                        <img
+                          src={iconSrc}
+                          alt={iconPart ?? ''}
+                          className="h-9 w-9 shrink-0 object-contain"
+                          draggable={false}
+                          onError={(e) => {
+                            const img = e.currentTarget
+                            img.style.display = 'none'
+                          }}
+                        />
+                      ) : null}
+                      <span className="text-sm text-slate-200 font-medium truncate group-hover:text-white">
+                        {recipe.alternate && <span className="text-purple-400 mr-1 text-xs">★</span>}
+                        {recipe.name}
+                      </span>
+                    </div>
                     <span className="text-xs text-slate-500 shrink-0">{recipe.machine}</span>
                   </div>
                   <div className="flex gap-2 mt-0.5 text-xs text-slate-500">

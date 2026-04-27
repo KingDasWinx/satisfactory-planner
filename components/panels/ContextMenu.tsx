@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useFactoryStore } from '@/store/factoryStore'
-import { exportConnectedFlow, exportConnectedFlowCompact } from '@/lib/utils/exportFlow'
+// (exportConnectedFlow removed — now uses same clipboard behavior as Ctrl+C)
 
 const MARGIN = 12
 
@@ -11,6 +11,10 @@ export function ContextMenu() {
   const closeMenu = useFactoryStore((s) => s.closeMenu)
   const openMenu = useFactoryStore((s) => s.openMenu)
   const runMagicPlanner = useFactoryStore((s) => s.runMagicPlanner)
+  const clipboard = useFactoryStore((s) => s.clipboard)
+  const copyNode = useFactoryStore((s) => s.copyNode)
+  const deleteNode = useFactoryStore((s) => s.deleteNode)
+  const commitPaste = useFactoryStore((s) => s.commitPaste)
   const nodes = useFactoryStore((s) => s.nodes)
   const edges = useFactoryStore((s) => s.edges)
 
@@ -58,28 +62,22 @@ export function ContextMenu() {
     runMagicPlanner(menu.nodeId, menu.position)
   }
 
-  async function actionCopyFlow() {
+  async function actionCopyNode() {
     if (!menu || menu.type !== 'nodeContext') return
-    const payload = exportConnectedFlow(nodes, edges, menu.nodeId)
-    const text = JSON.stringify(payload, null, 2)
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      // Fallback: open a prompt so the user can copy manually
-      window.prompt('Copie o JSON do fluxo:', text)
-    }
+    copyNode(menu.nodeId)
     closeMenu()
   }
 
-  async function actionCopyFlowCompact() {
+  function actionDeleteNode() {
     if (!menu || menu.type !== 'nodeContext') return
-    const payload = exportConnectedFlowCompact(nodes, edges, menu.nodeId)
-    const text = JSON.stringify(payload) // minificado para ficar bem pequeno
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      window.prompt('Copie o JSON (compacto) do fluxo:', text)
-    }
+    deleteNode(menu.nodeId)
+    closeMenu()
+  }
+
+  function actionPaste() {
+    if (!menu || menu.type !== 'context') return
+    if (!clipboard || clipboard.nodes.length === 0) return
+    commitPaste(menu.flowPosition)
     closeMenu()
   }
 
@@ -97,12 +95,22 @@ export function ContextMenu() {
 
         <div className="py-1">
           {!isNode && (
-            <button
-              onClick={actionAddRecipe}
-              className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
-            >
-              Adicionar receita…
-            </button>
+            <>
+              <button
+                onClick={actionAddRecipe}
+                className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
+              >
+                Adicionar receita…
+              </button>
+              <button
+                onClick={actionPaste}
+                disabled={!clipboard || clipboard.nodes.length === 0}
+                className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+                title={!clipboard || clipboard.nodes.length === 0 ? 'Nada para colar' : 'Cola o conteúdo do Ctrl+C'}
+              >
+                Colar
+              </button>
+            </>
           )}
 
           {isNode && (
@@ -111,21 +119,21 @@ export function ContextMenu() {
                 onClick={actionMagic}
                 className="w-full text-left px-3 py-2 text-sm text-amber-300 hover:bg-slate-800 transition-colors"
               >
-                Mágica (planejar fornecedores)…
+                Mágica
               </button>
               <button
-                onClick={actionCopyFlow}
+                onClick={actionCopyNode}
                 className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
-                title="Copia nós e arestas conectados a este bloco"
+                title="Copia este bloco (como Ctrl+C)"
               >
-                Copiar fluxo (debug)
+                Copiar bloco
               </button>
               <button
-                onClick={actionCopyFlowCompact}
-                className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
-                title="Copia um JSON bem pequeno, com os campos essenciais"
+                onClick={actionDeleteNode}
+                className="w-full text-left px-3 py-2 text-sm text-red-300 hover:bg-slate-800 transition-colors"
+                title="Remove apenas este bloco"
               >
-                Copiar fluxo (compacto)
+                Excluir bloco
               </button>
             </>
           )}

@@ -21,6 +21,7 @@ import { ContextMenu } from '@/components/panels/ContextMenu'
 import { MagicPlannerWizard } from '@/components/panels/MagicPlannerWizard'
 import { ToolsBar } from '@/components/panels/ToolsBar'
 import { CanvasBackground } from '@/components/layout/CanvasBackground'
+import { HelperLinesOverlay } from '@/components/layout/HelperLinesOverlay'
 import { MultiMachinesProvider } from '@/lib/gameDataContext'
 import { useEdgeColors } from '@/lib/hooks/useEdgeColors'
 import { useFlowSync } from '@/lib/hooks/useFlowSync'
@@ -61,6 +62,7 @@ interface FactoryEditorProps {
 export function FactoryEditor({ machines, recipes, multiMachines, projectId, readOnly = false }: FactoryEditorProps) {
   const nodes = useFactoryStore((s) => s.nodes)
   const edges = useFactoryStore((s) => s.edges)
+  const helperLines = useFactoryStore((s) => s.helperLines)
   const onNodesChange = useFactoryStore((s) => s.onNodesChange)
   const onEdgesChange = useFactoryStore((s) => s.onEdgesChange)
   const onConnect = useFactoryStore((s) => s.onConnect)
@@ -323,6 +325,13 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
           maxZoom={2}
         >
           <CanvasBackground />
+          {!readOnly && helperLines && rfInstance.current && (
+            <HelperLinesOverlay
+              viewport={rfInstance.current.getViewport()}
+              guides={helperLines.guides}
+              spacing={helperLines.spacing}
+            />
+          )}
           <Controls position="bottom-left" />
           <MiniMap
             nodeColor={(n) => n.type === 'machineNode' ? '#f59e0b' : '#475569'}

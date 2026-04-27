@@ -13,6 +13,10 @@ import {
 } from '@xyflow/react'
 import type { Machine, ParsedRecipe } from '@/lib/types/game'
 import type { MachineNodeData, MachineNode, SplitterNode, MergerNode, StorageNode, TextNode, FrameNode, FactoryNode, MenuContext, ClipboardData, HistoryEntry } from '@/lib/types/store'
+import { constrainDraggedNodesLive, settleNodesNoOverlap } from '@/lib/utils/nodeRepulsion'
+import { estimateNodeSize } from '@/lib/utils/nodeGeometry'
+import { getAlignmentSnap, getSpacingGuides } from '@/lib/utils/alignmentGuides'
+import type { HelperLinesState } from '@/lib/types/helperLines'
 
 export type { MachineNodeData, MachineNode, SplitterNode, MergerNode, StorageNode, TextNode, FrameNode, FactoryNode, MenuContext }
 
@@ -31,6 +35,7 @@ type FactoryStore = {
   nodes: FactoryNode[]
   edges: Edge[]
   menu: MenuContext | null
+  helperLines: HelperLinesState | null
 
   history: HistoryEntry[]
   future: HistoryEntry[]
@@ -47,6 +52,8 @@ type FactoryStore = {
 
   openMenu: (ctx: MenuContext) => void
   closeMenu: () => void
+
+  clearHelperLines: () => void
 
   runMagicPlanner: (nodeId: string, position: { x: number; y: number }) => void
   applyMagicPlanner: (args: {
@@ -114,6 +121,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
   nodes: [] as FactoryNode[],
   edges: [],
   menu: null,
+  helperLines: null,
   history: [],
   future: [],
   clipboard: null,
@@ -124,7 +132,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
   onNodesChange: (changes) => {
     // Push history UMA VEZ por batch (não por change individual) para evitar
     // múltiplos estados quando vários nós são movidos/deletados juntos
-    const hasPositionEnd = changes.some(c => c.type === 'position' && !c.dragging)
+    const hasPositionEnd = changes.some((c) => c.type === 'position' && (c as { dragging?: boolean }).dragging === false)
     const hasRemove = changes.some(c => c.type === 'remove')
     // 'dimensions' é emitido pelo NodeResizer ao terminar o resize de um frame
     const hasDimensionsEnd = changes.some(c => c.type === 'dimensions' && !(c as { resizing?: boolean }).resizing)
@@ -174,9 +182,81 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       }
     }
 
-    set((state) => ({
-      nodes: applyNodeChanges([...changes, ...extraChanges], state.nodes) as FactoryNode[],
-    }))
+    set((state) => {
+      const applied = applyNodeChanges([...changes, ...extraChanges], state.nodes) as FactoryNode[]
+
+      const isDragging = changes.some((c) => c.type === 'position' && (c as { dragging?: boolean }).dragging !== false)
+      if (isDragging) {
+        const draggedIds = new Set<string>()
+        for (const c of changes) {
+          if (c.type === 'position' && (c as { dragging?: boolean }).dragging !== false) draggedIds.add(c.id)
+        }
+        for (const c of extraChanges) {
+          if (c.type === 'position' && (c as { dragging?: boolean }).dragging !== false) draggedIds.add(c.id)
+        }
+
+        const excludeTypes = new Set<FactoryNode['type']>(['frameNode'])
+        const guides: HelperLinesState['guides'] = []
+        const spacing: HelperLinesState['spacing'] = []
+
+        // Apply snap-to-guides on drag (Figma-like)
+        const snapped = applied.map((n) => {
+          if (!draggedIds.has(n.id)) return n
+          if (excludeTypes.has(n.type)) return n
+
+          const align = getAlignmentSnap({ draggedId: n.id, nodes: applied, alignThreshold: 6, excludeTypes })
+          const space = getSpacingGuides({ draggedId: n.id, nodes: applied, spacingThreshold: 8, sameLineOverlapRatio: 0.3, excludeTypes })
+
+          const nextPos = { ...n.position }
+          // Apply alignment snap first
+          if (align?.vertical) nextPos.x = align.snapPosition.x
+          if (align?.horizontal) nextPos.y = align.snapPosition.y
+          // Apply spacing snap after (composition)
+          if (space) {
+            // space.snapPosition contains the recommended axis snaps; combine both axes
+            nextPos.x = space.snapPosition.x
+            nextPos.y = space.snapPosition.y
+          }
+          if (align?.vertical) guides.push(align.vertical)
+          if (align?.horizontal) guides.push(align.horizontal)
+          if (space) spacing.push(...space.guides, ...space.referenceGuides)
+
+          return ({ ...n, position: nextPos } as FactoryNode)
+        })
+
+        const result = constrainDraggedNodesLive(snapped, draggedIds)
+        return {
+          nodes: result,
+          helperLines: {
+            draggedIds: [...draggedIds],
+            snapPositionById: {},
+            guides,
+            spacing,
+          },
+        }
+      }
+
+      // On drag end, do not move other nodes. Only clamp the node(s) that just stopped dragging.
+      if (hasPositionEnd) {
+        const endedIds = new Set<string>()
+        for (const c of changes) {
+          if (c.type !== 'position') continue
+          const dragging = (c as { dragging?: boolean }).dragging
+          if (dragging === false) endedIds.add(c.id)
+        }
+        return {
+          nodes: endedIds.size > 0 ? constrainDraggedNodesLive(applied, endedIds) : applied,
+          helperLines: null,
+        }
+      }
+
+      // Dimensions end is emitted by NodeResizer (frames). Frames are exempt; keep as-is.
+      if (hasDimensionsEnd) {
+        return { nodes: applied }
+      }
+
+      return { nodes: applied }
+    })
   },
 
   onEdgesChange: (changes) => {
@@ -195,6 +275,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
 
   openMenu: (ctx) => set({ menu: ctx }),
   closeMenu: () => set({ menu: null }),
+  clearHelperLines: () => set({ helperLines: null }),
 
   runMagicPlanner: (nodeId, position) => {
     set({ menu: { type: 'magicWizard', nodeId, position } })
@@ -284,15 +365,38 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       return { x: pos.x, y }
     }
     function estimateMachineHeight(recipe: ParsedRecipe): number {
-      const inputs = recipe.inputs?.length ?? 0
-      const outputs = recipe.outputs?.length ?? 0
-      const rows = Math.max(inputs, outputs)
-      // Roughly matches MachineNode layout + utilization bar + safety padding.
-      return 36 + 8 + 26 + (rows > 0 ? (rows * (32 + 2)) : 0) + 18 + 16
+      // Align with lib/utils/nodeGeometry.ts, but pessimistic about dynamic sections:
+      // - Utilização may appear when there are inputs (once incomingSupply exists)
+      // - Sobra may appear when there are outputs (once outgoingDemand exists)
+      const base = estimateNodeSize({
+        id: 'tmp',
+        type: 'machineNode',
+        position: { x: 0, y: 0 },
+        data: {
+          machine: { name: 'tmp', averagePower: 0 } as unknown as Machine,
+          recipe,
+          availableRecipes: [recipe],
+          nMachines: 1,
+          clockSpeed: 1,
+          // incomingSupply/outgoingDemand intentionally omitted (unknown at layout time)
+        },
+      } as MachineNode).h
+
+      const UTIL_BAR_H = 32
+      const LEFTOVER_BLOCK_H = 24
+      const hasInputs = (recipe.inputs?.length ?? 0) > 0
+      const hasOutputs = (recipe.outputs?.length ?? 0) > 0
+
+      return base + (hasInputs ? UTIL_BAR_H : 0) + (hasOutputs ? LEFTOVER_BLOCK_H : 0)
     }
     function estimateSmallNodeHeight(): number {
-      // splitter/merger are small but edges/labels benefit from a bit of spacing
-      return 96
+      // Use the same estimator as collision system (deterministic).
+      return estimateNodeSize({
+        id: 'tmp',
+        type: 'splitterNode',
+        position: { x: 0, y: 0 },
+        data: {},
+      } as SplitterNode).h
     }
 
     function nextPos(depth: number): { x: number; y: number } {
@@ -615,15 +719,17 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     if (newNodes.length === 0 && newEdges.length === 0) return
 
     get()._pushHistory()
+    const updatedExistingNodes = nodes.map((n) =>
+      n.id === targetNodeId && n.type === 'machineNode'
+        ? ({ ...n, data: { ...n.data, createdByMagic: true, magicAutoApplied: false } } as FactoryNode)
+        : n
+    )
+
+    const nextNodes = [...updatedExistingNodes, ...newNodes]
+    const settledNodes = settleNodesNoOverlap(nextNodes, { iterations: 60 })
+
     set({
-      nodes: [
-        ...nodes.map((n) =>
-          n.id === targetNodeId && n.type === 'machineNode'
-            ? ({ ...n, data: { ...n.data, createdByMagic: true, magicAutoApplied: false } } as FactoryNode)
-            : n
-        ),
-        ...newNodes,
-      ],
+      nodes: settledNodes,
       edges: [...edges, ...newEdges],
       menu: null,
     })
@@ -638,7 +744,10 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       position: flowPosition,
       data: { machine, recipe, availableRecipes: [recipe], nMachines: 1, clockSpeed: 1 },
     }
-    set((state) => ({ nodes: [...state.nodes, newNode] }))
+    set((state) => {
+      const fixedIds = new Set(state.nodes.map((n) => n.id))
+      return { nodes: settleNodesNoOverlap([...state.nodes, newNode], { iterations: 30, fixedIds }) }
+    })
     return id
   },
 
@@ -651,7 +760,10 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       position: flowPosition,
       data: {},
     }
-    set((state) => ({ nodes: [...state.nodes, newNode] }))
+    set((state) => {
+      const fixedIds = new Set(state.nodes.map((n) => n.id))
+      return { nodes: settleNodesNoOverlap([...state.nodes, newNode], { iterations: 30, fixedIds }) }
+    })
     return id
   },
 
@@ -664,7 +776,10 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       position: flowPosition,
       data: {},
     }
-    set((state) => ({ nodes: [...state.nodes, newNode] }))
+    set((state) => {
+      const fixedIds = new Set(state.nodes.map((n) => n.id))
+      return { nodes: settleNodesNoOverlap([...state.nodes, newNode], { iterations: 30, fixedIds }) }
+    })
     return id
   },
 
@@ -741,7 +856,10 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       position: flowPosition,
       data: {},
     }
-    set((state) => ({ nodes: [...state.nodes, newNode] }))
+    set((state) => {
+      const fixedIds = new Set(state.nodes.map((n) => n.id))
+      return { nodes: settleNodesNoOverlap([...state.nodes, newNode], { iterations: 30, fixedIds }) }
+    })
     return id
   },
 
@@ -754,7 +872,10 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       position: flowPosition,
       data: { text: '' },
     }
-    set((state) => ({ nodes: [...state.nodes, newNode] }))
+    set((state) => {
+      const fixedIds = new Set(state.nodes.map((n) => n.id))
+      return { nodes: settleNodesNoOverlap([...state.nodes, newNode], { iterations: 30, fixedIds }) }
+    })
     return id
   },
 
@@ -892,8 +1013,11 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     const newFrames = newNodes.filter(n => n.type === 'frameNode')
     const newOthers = newNodes.filter(n => n.type !== 'frameNode')
 
+    const nextNodes = [...newFrames, ...nodes.map(n => ({ ...n, selected: false })), ...newOthers]
+    const settledNodes = settleNodesNoOverlap(nextNodes, { iterations: 40 })
+
     set({
-      nodes: [...newFrames, ...nodes.map(n => ({ ...n, selected: false })), ...newOthers],
+      nodes: settledNodes,
       edges: [...edges, ...newEdges],
       isGhostActive: false,
       // Mantém o clipboard intacto para permitir colagens repetidas (Ctrl+V múltiplas vezes)

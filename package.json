@@ -8,6 +8,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node --test --import tsx",
     "cli": "tsx scripts/index.ts"
   },
   "keywords": [],

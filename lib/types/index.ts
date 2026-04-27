@@ -2,3 +2,4 @@ export type { Ingredient, ParsedRecipe, Machine, Part, MultiMachineVariant, Mult
 export type { NodeRates } from './flow'
 export type { MachineNodeData, MachineNode, SplitterNodeData, SplitterNode, MergerNodeData, MergerNode, TextNodeData, TextNode, FrameNodeData, FrameNode, FactoryNode, MenuContext, ClipboardData, HistoryEntry } from './store'
 export type { ProjectMeta, ProjectData } from './projects'
+export type { FlowViewport, HelperGuideLine, HelperSpacingGuide, HelperLinesState } from './helperLines'

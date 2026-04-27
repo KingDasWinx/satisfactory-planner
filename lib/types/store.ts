@@ -55,6 +55,15 @@ export type TextNodeData = {
   text: string
   fontSize?: number
   color?: string
+  backgroundColor?: string
+  borderColor?: string
+  textAlign?: 'left' | 'center' | 'right'
+  fontWeight?: 400 | 600 | 700
+  italic?: boolean
+  underline?: boolean
+  padding?: number
+  locked?: boolean
+  autoSizeHeight?: boolean
 }
 export type TextNode = Node<TextNodeData, 'textNode'>
 

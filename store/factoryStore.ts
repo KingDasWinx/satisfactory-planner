@@ -91,6 +91,8 @@ type FactoryStore = {
   addTextNode: (flowPosition: XYPosition) => string
   addFrameNode: (flowPosition: XYPosition, width?: number, height?: number) => string
   setTextNodeContent: (nodeId: string, text: string) => void
+  setTextNodeStyle: (nodeId: string, stylePartial: Partial<Omit<TextNode['data'], 'text'>>) => void
+  resetTextNodeStyle: (nodeId: string) => void
   setFrameNodeLabel: (nodeId: string, label: string) => void
   setFrameNodeLocked: (nodeId: string, locked: boolean) => void
 
@@ -136,8 +138,9 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     // múltiplos estados quando vários nós são movidos/deletados juntos
     const hasPositionEnd = changes.some((c) => c.type === 'position' && (c as { dragging?: boolean }).dragging === false)
     const hasRemove = changes.some(c => c.type === 'remove')
-    // 'dimensions' é emitido pelo NodeResizer ao terminar o resize de um frame
-    const hasDimensionsEnd = changes.some(c => c.type === 'dimensions' && !(c as { resizing?: boolean }).resizing)
+    // 'dimensions' é emitido pelo NodeResizer ao terminar o resize.
+    // Use check estrito para não tratar `undefined` como "fim" (evita pushHistory em excesso).
+    const hasDimensionsEnd = changes.some(c => c.type === 'dimensions' && (c as { resizing?: boolean }).resizing === false)
     if (hasPositionEnd || hasRemove || hasDimensionsEnd) get()._pushHistory()
 
     const { nodes } = get()
@@ -187,6 +190,35 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     set((state) => {
       const applied = applyNodeChanges([...changes, ...extraChanges], state.nodes) as FactoryNode[]
 
+      // Persist explicit dimensions for textNode: xyflow emits `dimensions` changes
+      // but we want width/height to survive reload/undo via node.style.
+      const dimensionChanges = changes.filter(
+        (c): c is Extract<typeof c, { type: 'dimensions' }> => c.type === 'dimensions'
+      )
+      const appliedWithTextDimensions = dimensionChanges.length === 0
+        ? applied
+        : applied.map((n) => {
+          if (n.type !== 'textNode') return n
+          const change = dimensionChanges.find((c) => c.id === n.id) as unknown as {
+            id: string
+            dimensions?: { width?: number; height?: number }
+            width?: number
+            height?: number
+          } | undefined
+          if (!change) return n
+          const width = change.dimensions?.width ?? change.width
+          const height = change.dimensions?.height ?? change.height
+          if (typeof width !== 'number' || typeof height !== 'number') return n
+          return {
+            ...n,
+            style: {
+              ...(n.style ?? {}),
+              width,
+              height,
+            },
+          } as FactoryNode
+        })
+
       const isDragging = changes.some((c) => c.type === 'position' && (c as { dragging?: boolean }).dragging !== false)
       if (isDragging) {
         const draggedIds = new Set<string>()
@@ -202,7 +234,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
         const spacing: HelperLinesState['spacing'] = []
 
         // Apply snap-to-guides on drag (Figma-like)
-        const snapped = applied.map((n) => {
+        const snapped = appliedWithTextDimensions.map((n) => {
           if (!draggedIds.has(n.id)) return n
           if (excludeTypes.has(n.type)) return n
 
@@ -247,8 +279,8 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
           if (dragging === false) endedIds.add(c.id)
         }
         if (endedIds.size > 0) {
-          const beforeById = new Map(applied.map((n) => [n.id, n.position] as const))
-          const after = constrainDraggedNodesLive(applied, endedIds)
+          const beforeById = new Map(appliedWithTextDimensions.map((n) => [n.id, n.position] as const))
+          const after = constrainDraggedNodesLive(appliedWithTextDimensions, endedIds)
           for (const id of endedIds) {
             const before = beforeById.get(id)
             const afterPos = after.find((n) => n.id === id)?.position
@@ -263,17 +295,17 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
           return { nodes: after, helperLines: null }
         }
         return {
-          nodes: applied,
+          nodes: appliedWithTextDimensions,
           helperLines: null,
         }
       }
 
       // Dimensions end is emitted by NodeResizer (frames). Frames are exempt; keep as-is.
       if (hasDimensionsEnd) {
-        return { nodes: applied }
+        return { nodes: appliedWithTextDimensions }
       }
 
-      return { nodes: applied }
+      return { nodes: appliedWithTextDimensions }
     })
   },
 
@@ -918,6 +950,45 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       nodes: state.nodes.map((n) =>
         n.id === nodeId ? ({ ...n, data: { ...n.data, text } } as FactoryNode) : n
       ),
+    }))
+  },
+
+  setTextNodeStyle: (nodeId, stylePartial) => {
+    const { nodes } = get()
+    const node = nodes.find((n) => n.id === nodeId)
+    if (!node || node.type !== 'textNode') return
+
+    get()._pushHistory()
+    set((state) => ({
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId) return n
+        if (n.type !== 'textNode') return n
+        const nextStyle =
+          stylePartial.autoSizeHeight === true
+            ? { ...(n.style ?? {}), height: undefined }
+            : n.style
+        return ({ ...n, style: nextStyle, data: { ...n.data, ...stylePartial } } as FactoryNode)
+      }),
+    }))
+  },
+
+  resetTextNodeStyle: (nodeId) => {
+    const { nodes } = get()
+    const node = nodes.find((n) => n.id === nodeId)
+    if (!node || node.type !== 'textNode') return
+
+    get()._pushHistory()
+    set((state) => ({
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId) return n
+        if (n.type !== 'textNode') return n
+
+        const { text } = n.data as TextNode['data']
+        return ({
+          ...n,
+          data: { text },
+        } as FactoryNode)
+      }),
     }))
   },
 

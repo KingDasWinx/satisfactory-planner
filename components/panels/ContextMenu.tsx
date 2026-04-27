@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useFactoryStore } from '@/store/factoryStore'
+import { TextConfigPopup } from '@/components/nodes/TextConfigPopup'
+import type { TextNode } from '@/lib/types'
 // (exportConnectedFlow removed — now uses same clipboard behavior as Ctrl+C)
 
 const MARGIN = 12
@@ -15,10 +17,11 @@ export function ContextMenu() {
   const copyNode = useFactoryStore((s) => s.copyNode)
   const deleteNode = useFactoryStore((s) => s.deleteNode)
   const commitPaste = useFactoryStore((s) => s.commitPaste)
+  const resetTextNodeStyle = useFactoryStore((s) => s.resetTextNodeStyle)
   const nodes = useFactoryStore((s) => s.nodes)
-  const edges = useFactoryStore((s) => s.edges)
 
   const menuRef = useRef<HTMLDivElement>(null)
+  const [textPopup, setTextPopup] = useState<{ nodeId: string; anchorRect: DOMRect } | null>(null)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -52,6 +55,10 @@ export function ContextMenu() {
 
   const isNode = menu.type === 'nodeContext'
 
+  const selectedNode = isNode ? (nodes.find((n) => n.id === menu.nodeId) ?? null) : null
+
+  const isTextNode = selectedNode?.type === 'textNode'
+
   function actionAddRecipe() {
     if (!menu || menu.type !== 'context') return
     openMenu({ type: 'canvas', position: menu.position, flowPosition: menu.flowPosition })
@@ -78,6 +85,24 @@ export function ContextMenu() {
     if (!menu || menu.type !== 'context') return
     if (!clipboard || clipboard.nodes.length === 0) return
     commitPaste(menu.flowPosition)
+    closeMenu()
+  }
+
+  function actionEditText() {
+    if (!menu || menu.type !== 'nodeContext') return
+    const node = nodes.find((n) => n.id === menu.nodeId)
+    if (!node || node.type !== 'textNode') return
+    const anchorRect = menuRef.current?.getBoundingClientRect()
+    if (!anchorRect) return
+    setTextPopup({ nodeId: menu.nodeId, anchorRect })
+    closeMenu()
+  }
+
+  function actionResetTextStyle() {
+    if (!menu || menu.type !== 'nodeContext') return
+    const node = nodes.find((n) => n.id === menu.nodeId)
+    if (!node || node.type !== 'textNode') return
+    resetTextNodeStyle(menu.nodeId)
     closeMenu()
   }
 
@@ -121,6 +146,23 @@ export function ContextMenu() {
               >
                 Mágica
               </button>
+              {isTextNode && (
+                <>
+                  <button
+                    onClick={actionEditText}
+                    className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
+                  >
+                    Editar texto…
+                  </button>
+                  <button
+                    onClick={actionResetTextStyle}
+                    className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
+                    title="Remove as personalizações e volta ao padrão"
+                  >
+                    Resetar estilo
+                  </button>
+                </>
+              )}
               <button
                 onClick={actionCopyNode}
                 className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
@@ -139,6 +181,19 @@ export function ContextMenu() {
           )}
         </div>
       </div>
+
+      {textPopup && (() => {
+        const node = nodes.find((n) => n.id === textPopup.nodeId)
+        if (!node || node.type !== 'textNode') return null
+        return (
+          <TextConfigPopup
+            id={node.id}
+            data={(node as TextNode).data}
+            anchorRect={textPopup.anchorRect}
+            onClose={() => setTextPopup(null)}
+          />
+        )
+      })()}
     </>
   )
 }

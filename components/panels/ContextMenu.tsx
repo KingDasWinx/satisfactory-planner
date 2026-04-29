@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useFactoryStore } from '@/store/factoryStore'
 import { TextConfigPopup } from '@/components/nodes/TextConfigPopup'
 import type { TextNode } from '@/lib/types'
+import { showMagicPlannerInContextMenu } from '@/lib/utils/magicPlannerVisibility'
 // (exportConnectedFlow removed — now uses same clipboard behavior as Ctrl+C)
 
 const MARGIN = 12
@@ -58,6 +59,7 @@ export function ContextMenu() {
   const selectedNode = isNode ? (nodes.find((n) => n.id === menu.nodeId) ?? null) : null
 
   const isTextNode = selectedNode?.type === 'textNode'
+  const magicVisible = selectedNode !== null && showMagicPlannerInContextMenu(selectedNode)
 
   function actionAddRecipe() {
     if (!menu || menu.type !== 'context') return
@@ -140,12 +142,14 @@ export function ContextMenu() {
 
           {isNode && (
             <>
-              <button
-                onClick={actionMagic}
-                className="w-full text-left px-3 py-2 text-sm text-amber-300 hover:bg-slate-800 transition-colors"
-              >
-                Mágica
-              </button>
+              {magicVisible && (
+                <button
+                  onClick={actionMagic}
+                  className="w-full text-left px-3 py-2 text-sm text-amber-300 hover:bg-slate-800 transition-colors"
+                >
+                  Mágica
+                </button>
+              )}
               {isTextNode && (
                 <>
                   <button

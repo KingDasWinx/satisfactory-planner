@@ -13,16 +13,19 @@
 ## File structure (new + touched)
 
 **Create**
+
 - `components/nodes/TextConfigPopup.tsx`: popup de customização do text node (tamanho, cor, alinhamento etc.)
 - `lib/utils/textStyle.ts`: utils puros (clamp, presets, validação de cor)
 
 **Modify**
+
 - `components/nodes/TextNode.tsx`: adicionar `NodeResizer`, aplicar estilos configuráveis, suportar “auto height” opcional
 - `store/factoryStore.ts`: persistir `width/height` do `textNode` em `node.style` no `onNodesChange` ao terminar resize
 - `lib/types/store.ts`: expandir `TextNodeData` com novos campos de estilo
 - `components/panels/ContextMenu.tsx`: adicionar entradas “Editar texto…” e “Resetar estilo” (só para `textNode`)
 
 **Optional (QoL extra)**
+
 - `components/nodes/FrameNode.tsx`: adicionar opacidade/“título sempre visível” (pequena melhoria)
 - `lib/utils/nodeGeometry.ts`: atualizar `estimateNodeSize(textNode)` para respeitar `node.style.width/height` quando existir (para repulsão/magic planner ficarem mais coerentes)
 
@@ -45,6 +48,7 @@ Persistidas em `TextNodeData` (pt-BR para labels; chaves em inglês):
 - **autoSizeHeight**: boolean (se true, altura cresce com conteúdo; largura continua pelo resize)
 
 QoL extra:
+
 - **Presets rápidos**: “Nota”, “Título”, “Aviso”, “Checklist” (aplicam um conjunto de estilos)
 - **Botão “Resetar estilo”**: volta para defaults do projeto
 
@@ -53,9 +57,9 @@ QoL extra:
 ### Task 1: Expandir `TextNodeData` (tipos)
 
 **Files:**
-- Modify: `lib/types/store.ts`
 
-- [ ] **Step 1: Atualizar tipo `TextNodeData`**
+- Modify: `lib/types/store.ts`
+- **Step 1: Atualizar tipo `TextNodeData`**
 
 Atualizar `TextNodeData` para:
 
@@ -76,12 +80,12 @@ export type TextNodeData = {
 }
 ```
 
-- [ ] **Step 2: Rodar build para validar TypeScript**
+- **Step 2: Rodar build para validar TypeScript**
 
 Run: `npm run build`  
 Expected: sucesso.
 
-- [ ] **Step 3: Commit**
+- **Step 3: Commit**
 
 ```bash
 git add "lib/types/store.ts"
@@ -97,9 +101,9 @@ EOF
 ### Task 2: Habilitar resize no `TextNode` (UI)
 
 **Files:**
-- Modify: `components/nodes/TextNode.tsx`
 
-- [ ] **Step 1: Adicionar `NodeResizer`**
+- Modify: `components/nodes/TextNode.tsx`
+- **Step 1: Adicionar `NodeResizer`**
 
 No topo:
 
@@ -119,14 +123,16 @@ No componente, renderizar:
 />
 ```
 
-- [ ] **Step 2: Usar estilos do `data`**
+- **Step 2: Usar estilos do `data`**
 
 Aplicar no container:
+
 - `backgroundColor` via `style`
 - `borderColor` (quando não selecionado) via `style`
 - `padding` via `style`
 
 Aplicar no `<textarea>` e no `<p>`:
+
 - `textAlign`, `fontWeight`, `fontStyle` (italic), `textDecoration` (underline)
 
 Exemplo de `style` no texto:
@@ -140,17 +146,17 @@ const fontStyle = data.italic ? 'italic' : 'normal'
 const textDecoration = data.underline ? 'underline' : 'none'
 ```
 
-- [ ] **Step 3: Respeitar modo locked**
+- **Step 3: Respeitar modo locked**
 
 No `startEditing()`:
-- se `data.locked === true`, não entrar em edição.
 
-- [ ] **Step 4: Build**
+- se `data.locked === true`, não entrar em edição.
+- **Step 4: Build**
 
 Run: `npm run build`  
 Expected: sucesso.
 
-- [ ] **Step 5: Commit**
+- **Step 5: Commit**
 
 ```bash
 git add "components/nodes/TextNode.tsx"
@@ -166,11 +172,12 @@ EOF
 ### Task 3: Persistir `width/height` do TextNode no store ao finalizar resize
 
 **Files:**
+
 - Modify: `store/factoryStore.ts`
 
 Contexto: `FrameNode` já usa `NodeResizer` e o store já detecta `hasDimensionsEnd`. Precisamos garantir que quando um `textNode` for redimensionado, o tamanho fique persistido em `node.style` (para salvar projeto / undo / reload).
 
-- [ ] **Step 1: Detectar `dimensions` changes e aplicar no node**
+- **Step 1: Detectar `dimensions` changes e aplicar no node**
 
 No `onNodesChange`, antes do `applyNodeChanges(...)` ou logo após (desde que não crie loop), extrair changes:
 
@@ -196,19 +203,19 @@ const next = applied.map((n) => {
 
 E retornar `nodes: next` (respeitando as branches já existentes de drag/snapping).
 
-- [ ] **Step 2: Verificar Undo**
+- **Step 2: Verificar Undo**
 
 Manual:
+
 - criar text node
 - redimensionar
 - `Ctrl+Z` deve voltar o tamanho anterior
-
-- [ ] **Step 3: Build**
+- **Step 3: Build**
 
 Run: `npm run build`  
 Expected: sucesso.
 
-- [ ] **Step 4: Commit**
+- **Step 4: Commit**
 
 ```bash
 git add "store/factoryStore.ts"
@@ -224,12 +231,12 @@ EOF
 ### Task 4: Popup de customização do TextNode (QoL)
 
 **Files:**
+
 - Create: `components/nodes/TextConfigPopup.tsx`
 - Create: `lib/utils/textStyle.ts`
 - Modify: `components/panels/ContextMenu.tsx`
 - Modify: `store/factoryStore.ts` (adicionar actions de update do text style)
-
-- [ ] **Step 1: Criar util de clamp/parse de cor**
+- **Step 1: Criar util de clamp/parse de cor**
 
 `lib/utils/textStyle.ts`:
 
@@ -248,7 +255,7 @@ export function isLikelyCssColor(v: string): boolean {
 }
 ```
 
-- [ ] **Step 2: Actions no store para estilo do texto**
+- **Step 2: Actions no store para estilo do texto**
 
 Adicionar em `FactoryStore`:
 
@@ -258,12 +265,13 @@ resetTextNodeStyle: (nodeId: string) => void
 ```
 
 Implementação:
+
 - `setTextNodeStyle`: `_pushHistory()` e faz merge no `node.data`
 - `resetTextNodeStyle`: `_pushHistory()` e remove campos de estilo (mantém `text`)
-
-- [ ] **Step 3: Criar `TextConfigPopup`**
+- **Step 3: Criar `TextConfigPopup`**
 
 Regras:
+
 - UI simples, `createPortal`, semelhante ao `ConfigPopup`
 - Campos:
   - Font size (number)
@@ -275,19 +283,18 @@ Regras:
   - Lock (toggle)
   - Auto altura (toggle)
   - Reset style (button)
-
-- [ ] **Step 4: Integrar no `ContextMenu` do `textNode`**
+- **Step 4: Integrar no `ContextMenu` do `textNode`**
 
 Quando `menu.type === 'nodeContext'` e o node alvo for `textNode`:
+
 - adicionar botão “Editar texto…”
 - abrir `TextConfigPopup` ancorado ao menu (mesmo padrão do `ConfigPopup` com `anchorRect`)
-
-- [ ] **Step 5: Build**
+- **Step 5: Build**
 
 Run: `npm run build`  
 Expected: sucesso.
 
-- [ ] **Step 6: Commit**
+- **Step 6: Commit**
 
 ```bash
 git add "lib/utils/textStyle.ts" "store/factoryStore.ts" "components/nodes/TextConfigPopup.tsx" "components/panels/ContextMenu.tsx"
@@ -303,11 +310,13 @@ EOF
 ### Task 5: (Opcional) QoL para FrameNode e Ferramentas
 
 **Files:**
+
 - Modify: `components/nodes/FrameNode.tsx`
 - Modify: `lib/types/store.ts`
 - Modify: `store/factoryStore.ts`
 
 Sugestões:
+
 - **Frame opacity** (ex: 2–12%)
 - **Frame title size** (pequeno/médio)
 - **“Travar tamanho”** (desabilita `NodeResizer` quando ativo)
@@ -323,4 +332,3 @@ Commit separado como QoL opcional.
 - **Resize do text**: Task 2 (UI) + Task 3 (persistência/undo).
 - **Customizações**: Task 1 (tipos) + Task 4 (store + popup + context menu).
 - **Sem placeholders**: cada task contém paths e snippets de código/commands.
-

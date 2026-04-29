@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { SplitterNode as SplitterNodeType } from '@/lib/types/store'
+import { SPLITTER_ICON_SRC } from '@/lib/constants/logisticsIcons'
 import { fmt } from '@/lib/utils/format'
 
 interface SplitterNodeProps extends NodeProps {
@@ -16,6 +18,7 @@ const HEADER_H = 36
 const handleTop = (i: number) => HEADER_H + i * ROW_H + ROW_H / 2
 
 export function SplitterNode({ data, selected }: SplitterNodeProps) {
+  const [hideIcon, setHideIcon] = useState(false)
   const totalIn = data.incomingSupply?.[0] ?? 0
   const outs = data.outgoingDemand ?? []
 
@@ -46,7 +49,17 @@ export function SplitterNode({ data, selected }: SplitterNodeProps) {
 
       {/* Header */}
       <div className="h-9 bg-amber-500/10 border-b border-amber-500/30 rounded-t-lg px-3 flex items-center gap-2">
-        <span className="text-amber-400 font-bold">⑃</span>
+        {!hideIcon ? (
+          <img
+            src={SPLITTER_ICON_SRC}
+            alt=""
+            className="h-7 w-7 shrink-0 object-contain"
+            draggable={false}
+            onError={() => setHideIcon(true)}
+          />
+        ) : (
+          <span className="text-amber-400 font-bold w-7 shrink-0 text-center">⑃</span>
+        )}
         <span className="text-xs font-semibold text-amber-300">Splitter</span>
         {totalIn > 0 && (
           <span

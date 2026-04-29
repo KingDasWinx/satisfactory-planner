@@ -14,6 +14,7 @@ import {
 import type { Machine, ParsedRecipe } from '@/lib/types/game'
 import type { MachineNodeData, MachineNode, SplitterNode, MergerNode, StorageNode, TextNode, FrameNode, FactoryNode, MenuContext, ClipboardData, HistoryEntry } from '@/lib/types/store'
 import { constrainDraggedNodesLive, settleNodesNoOverlap } from '@/lib/utils/nodeRepulsion'
+import { showMagicPlannerInContextMenu } from '@/lib/utils/magicPlannerVisibility'
 import { estimateNodeSize } from '@/lib/utils/nodeGeometry'
 import { getAlignmentSnap, getSpacingGuides } from '@/lib/utils/alignmentGuides'
 import type { HelperLinesState } from '@/lib/types/helperLines'
@@ -328,6 +329,8 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
   clearHelperLines: () => set({ helperLines: null }),
 
   runMagicPlanner: (nodeId, position) => {
+    const node = get().nodes.find((n) => n.id === nodeId)
+    if (!node || !showMagicPlannerInContextMenu(node)) return
     set({ menu: { type: 'magicWizard', nodeId, position } })
   },
 

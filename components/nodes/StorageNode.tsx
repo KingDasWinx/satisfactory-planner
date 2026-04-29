@@ -3,26 +3,15 @@
 import { useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { StorageNode as StorageNodeType } from '@/lib/types/store'
+import { STORAGE_ICON_SRC } from '@/lib/constants/logisticsIcons'
 import { fmt } from '@/lib/utils/format'
 
 interface StorageNodeProps extends NodeProps {
   data: StorageNodeType['data']
 }
 
-function IconStorage() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="2" y="4" width="20" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      <rect x="2" y="10" width="20" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      <rect x="2" y="16" width="20" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="19" cy="6.5" r="1" fill="currentColor" />
-      <circle cx="19" cy="12.5" r="1" fill="currentColor" />
-      <circle cx="19" cy="18.5" r="1" fill="currentColor" />
-    </svg>
-  )
-}
-
 export function StorageNode({ data, selected }: StorageNodeProps) {
+  const [hideIcon, setHideIcon] = useState(false)
   const [expanded, setExpanded] = useState(false)
 
   const totalIn = data.incomingSupply?.[0] ?? 0
@@ -57,7 +46,17 @@ export function StorageNode({ data, selected }: StorageNodeProps) {
 
       {/* Header */}
       <div className="h-9 bg-amber-500/10 border-b border-amber-500/30 rounded-t-lg px-3 flex items-center gap-2">
-        <span className="text-amber-400"><IconStorage /></span>
+        {!hideIcon ? (
+          <img
+            src={STORAGE_ICON_SRC}
+            alt=""
+            className="h-7 w-7 shrink-0 object-contain"
+            draggable={false}
+            onError={() => setHideIcon(true)}
+          />
+        ) : (
+          <span className="text-amber-400 w-7 shrink-0 text-center text-xs">▤</span>
+        )}
         <span className="text-xs font-semibold text-amber-300">Storage</span>
       </div>
 

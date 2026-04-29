@@ -5,6 +5,7 @@ import { useFactoryStore } from '@/store/factoryStore'
 import type { Machine, ParsedRecipe } from '@/lib/types/game'
 import { partNameToIconPath } from '@/lib/utils/iconName'
 import { getRecipePrimaryIconPart } from '@/lib/utils/recipeIcon'
+import { MERGER_ICON_SRC, SPLITTER_ICON_SRC, STORAGE_ICON_SRC } from '@/lib/constants/logisticsIcons'
 
 type SearchMenuProps = {
   recipes: ParsedRecipe[]
@@ -12,9 +13,9 @@ type SearchMenuProps = {
 }
 
 const SPECIAL_NODES = [
-  { id: 'splitter', label: 'Splitter', iconSrc: '/icons/Smart_Splitter.png', description: '1 entrada → 3 saídas' },
-  { id: 'merger', label: 'Merger', iconSrc: '/icons/Conveyor_Merger.png', description: '3 entradas → 1 saída' },
-  { id: 'storage', label: 'Storage', iconSrc: '/icons/Storage_Container.png', description: '1 entrada → 1 saída' },
+  { id: 'splitter', label: 'Splitter', iconSrc: SPLITTER_ICON_SRC, description: '1 entrada → 3 saídas' },
+  { id: 'merger', label: 'Merger', iconSrc: MERGER_ICON_SRC, description: '3 entradas → 1 saída' },
+  { id: 'storage', label: 'Storage', iconSrc: STORAGE_ICON_SRC, description: '1 entrada → 1 saída' },
 ] as const
 
 const MARGIN = 12 // min distance from viewport edge

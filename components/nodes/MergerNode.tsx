@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { MergerNode as MergerNodeType } from '@/lib/types/store'
+import { MERGER_ICON_SRC } from '@/lib/constants/logisticsIcons'
 import { fmt } from '@/lib/utils/format'
 
 interface MergerNodeProps extends NodeProps {
@@ -13,6 +15,7 @@ const HEADER_H = 36
 const handleTop = (i: number) => HEADER_H + i * ROW_H + ROW_H / 2
 
 export function MergerNode({ data, selected }: MergerNodeProps) {
+  const [hideIcon, setHideIcon] = useState(false)
   const ins = data.incomingSupply ?? []
   const totalOut = ins.reduce((a, b) => a + (b ?? 0), 0)
 
@@ -39,7 +42,17 @@ export function MergerNode({ data, selected }: MergerNodeProps) {
 
       {/* Header */}
       <div className="h-9 bg-emerald-500/10 border-b border-emerald-500/30 rounded-t-lg px-3 flex items-center gap-2">
-        <span className="text-emerald-400 font-bold">⑄</span>
+        {!hideIcon ? (
+          <img
+            src={MERGER_ICON_SRC}
+            alt=""
+            className="h-7 w-7 shrink-0 object-contain"
+            draggable={false}
+            onError={() => setHideIcon(true)}
+          />
+        ) : (
+          <span className="text-emerald-400 font-bold w-7 shrink-0 text-center">⑄</span>
+        )}
         <span className="text-xs font-semibold text-emerald-300">Merger</span>
         {totalOut > 0 && (
           <span className="ml-auto text-[10px] text-slate-400" title={`Saída total: ${fmt(totalOut)}/m`}>

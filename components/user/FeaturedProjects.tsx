@@ -29,9 +29,14 @@ export function FeaturedProjects({ username }: { username: string }) {
         <Link
           key={p.id}
           href={`/project/${p.id}/view`}
-          className="rounded-xl border border-slate-800 bg-slate-900 hover:border-slate-700 transition-colors p-4"
+          className="group relative rounded-xl border border-amber-500/30 bg-gradient-to-b from-amber-500/5 to-transparent hover:border-amber-500/50 transition-all p-4"
         >
-          <p className="text-sm font-semibold text-slate-100 truncate">{p.name}</p>
+          <div className="absolute top-3 right-3">
+            <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5">
+              ★ Destaque
+            </span>
+          </div>
+          <p className="text-sm font-semibold text-slate-100 truncate pr-24">{p.name}</p>
           {p.description && <p className="text-xs text-slate-500 mt-2 line-clamp-3">{p.description}</p>}
           <p className="text-xs text-slate-600 mt-3">Atualizado em {new Date(p.updatedAt).toLocaleDateString('pt-BR')}</p>
         </Link>

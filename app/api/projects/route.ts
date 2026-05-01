@@ -33,6 +33,19 @@ export async function GET(req: Request) {
       visibility: true,
       createdAt: true,
       updatedAt: true,
+      owner: {
+        select: {
+          username: true,
+          name: true,
+          image: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
     },
     take: 200,
   })
@@ -44,6 +57,11 @@ export async function GET(req: Request) {
     isPublic: p.visibility === 'COMMUNITY',
     createdAt: p.createdAt.getTime(),
     updatedAt: p.updatedAt.getTime(),
+    ownerUsername: p.owner.username,
+    ownerName: p.owner.name,
+    ownerImage: p.owner.image,
+    likeCount: p._count.likes,
+    commentCount: p._count.comments,
   })))
 }
 

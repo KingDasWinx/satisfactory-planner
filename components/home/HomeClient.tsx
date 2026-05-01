@@ -6,8 +6,10 @@ import { useProjectStore } from '@/store/projectStore'
 import { ProjectCard } from './ProjectCard'
 import { CreateProjectModal } from './CreateProjectModal'
 import { LoginModal } from '@/components/auth/LoginModal'
-import { useSession, signOut } from 'next-auth/react'
-import { EditProfileForm } from '@/components/user/EditProfileForm'
+import { useSession } from 'next-auth/react'
+import { CommunityProjectCard } from '@/components/community/CommunityProjectCard'
+import { UserSection } from './UserSection'
+import { SettingsSection } from './SettingsSection'
 import type { ProjectData } from '@/lib/types/projects'
 import type { MultiMachine } from '@/lib/types/game'
 import { visibilityToIsPublic } from '@/lib/utils/projectMeta'
@@ -253,6 +255,11 @@ type CommunityProjectMeta = {
   isPublic: boolean
   createdAt: number
   updatedAt: number
+  ownerUsername: string
+  ownerName: string | null
+  ownerImage: string | null
+  likeCount: number
+  commentCount: number
 }
 
 function CommunitySection() {
@@ -260,6 +267,7 @@ function CommunitySection() {
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState<CommunityProjectMeta[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [sort, setSort] = useState<'recent' | 'top'>('recent')
 
   useEffect(() => {
     let cancelled = false
@@ -288,6 +296,13 @@ function CommunitySection() {
     )
   }
 
+  const sorted = useMemo(() => {
+    const copy = [...items]
+    return sort === 'top'
+      ? copy.sort((a, b) => b.likeCount - a.likeCount)
+      : copy.sort((a, b) => b.updatedAt - a.updatedAt)
+  }, [items, sort])
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-8 py-6 border-b border-slate-800 shrink-0">
@@ -296,6 +311,31 @@ function CommunitySection() {
           <p className="text-xs text-slate-500 mt-0.5">Projetos públicos publicados pela comunidade</p>
         </div>
       </div>
+
+      {items.length > 0 && (
+        <div className="px-8 py-3 border-b border-slate-800 shrink-0 flex items-center gap-2">
+          <button
+            onClick={() => setSort('recent')}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              sort === 'recent'
+                ? 'border-amber-500/50 text-amber-400 bg-amber-500/10'
+                : 'border-slate-700 text-slate-400 hover:border-slate-600'
+            }`}
+          >
+            Recentes
+          </button>
+          <button
+            onClick={() => setSort('top')}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              sort === 'top'
+                ? 'border-amber-500/50 text-amber-400 bg-amber-500/10'
+                : 'border-slate-700 text-slate-400 hover:border-slate-600'
+            }`}
+          >
+            Mais curtidos
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-8 py-6">
         {error && (
@@ -316,26 +356,19 @@ function CommunitySection() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {items.map((p) => (
-              <button
+            {sorted.map((p) => (
+              <CommunityProjectCard
                 key={p.id}
-                className="text-left group relative flex flex-col rounded-xl border border-slate-700 bg-slate-900 overflow-hidden hover:border-slate-600 transition-colors p-4"
-                onClick={() => router.push(`/project/${p.id}/view`)}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-slate-100 truncate leading-tight">{p.name}</p>
-                  <span className="text-xs text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-2 py-0.5">
-                    Público
-                  </span>
-                </div>
-                {p.description && (
-                  <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">{p.description}</p>
-                )}
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-xs text-slate-600">Abrir visualização</span>
-                  <span className="text-xs text-slate-600 group-hover:text-slate-400 transition-colors">/view</span>
-                </div>
-              </button>
+                id={p.id}
+                name={p.name}
+                description={p.description}
+                ownerUsername={p.ownerUsername}
+                ownerName={p.ownerName}
+                ownerImage={p.ownerImage}
+                likeCount={p.likeCount}
+                commentCount={p.commentCount}
+                updatedAt={p.updatedAt}
+              />
             ))}
           </div>
         )}
@@ -344,151 +377,6 @@ function CommunitySection() {
   )
 }
 
-function SettingsSection() {
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center px-8 py-6 border-b border-slate-800 shrink-0">
-        <h1 className="text-lg font-bold text-slate-100">Configurações</h1>
-      </div>
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-slate-500 text-sm">Configurações</p>
-      </div>
-    </div>
-  )
-}
-
-function UserSection() {
-  const router = useRouter()
-  const { data: session, status } = useSession()
-  const [loginOpen, setLoginOpen] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [stats, setStats] = useState<null | { level: number; points: number }>(null)
-  const [statsError, setStatsError] = useState<string | null>(null)
-  const [exporting, setExporting] = useState(false)
-  const exportCloudProjects = useProjectStore((s) => s.exportCloudProjects)
-
-  const username = (session?.user as unknown as { username?: string } | undefined)?.username
-    ?? null
-
-  useEffect(() => {
-    if (!session?.user) return
-    let cancelled = false
-    setStatsError(null)
-    fetch('/api/me/stats')
-      .then((r) => (r.ok ? (r.json() as Promise<{ level: number; points: number }>) : Promise.reject(new Error('bad'))))
-      .then((json) => { if (!cancelled) setStats({ level: Number(json.level ?? 1), points: Number(json.points ?? 0) }) })
-      .catch(() => { if (!cancelled) setStatsError('Não foi possível carregar sua pontuação.') })
-    return () => { cancelled = true }
-  }, [session?.user])
-
-  const statsLabel = useMemo(() => {
-    if (stats) return `Nível ${stats.level} · ${stats.points} pts`
-    return 'Carregando pontuação...'
-  }, [stats])
-
-  async function handleExportCloud() {
-    if (exporting) return
-    setExporting(true)
-    const json = await exportCloudProjects().catch(() => null)
-    setExporting(false)
-    if (!json) return
-    const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `satisfactory-planner-export-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center px-8 py-6 border-b border-slate-800 shrink-0">
-        <h1 className="text-lg font-bold text-slate-100">Usuário</h1>
-      </div>
-      <div className="flex-1 px-8 py-6">
-        <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
-
-        {status === 'loading' ? (
-          <p className="text-slate-600 text-sm">Carregando...</p>
-        ) : session?.user ? (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 px-5 py-4">
-              <p className="text-sm font-semibold text-slate-100">
-                {session.user.name ?? 'Conta'}
-              </p>
-              {session.user.email && <p className="text-xs text-slate-500 mt-1">{session.user.email}</p>}
-              {username && <p className="text-xs text-slate-500 mt-1">@{username}</p>}
-              <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-                <p className={stats ? 'text-slate-400' : 'text-slate-600'}>{statsLabel}</p>
-                {statsError && <p className="text-amber-300">{statsError}</p>}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors"
-                onClick={() => router.push('/me')}
-              >
-                Meu painel
-              </button>
-              <button
-                type="button"
-                disabled={!username}
-                className="rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-60 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors"
-                onClick={() => { if (username) router.push(`/u/@${username}`) }}
-              >
-                Meu perfil
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors disabled:opacity-60"
-                disabled={exporting}
-                onClick={() => { void handleExportCloud() }}
-              >
-                {exporting ? 'Exportando...' : 'Exportar (cloud)'}
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors"
-                onClick={() => setEditing((v) => !v)}
-              >
-                {editing ? 'Fechar edição' : 'Editar perfil'}
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors"
-                onClick={() => void signOut({ redirect: false })}
-              >
-                Sair
-              </button>
-            </div>
-
-            {editing && <EditProfileForm />}
-
-            {!username && (
-              <p className="text-xs text-amber-300">
-                Seu username ainda não está definido. (MVP: vamos definir no cadastro/login.)
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-slate-500 text-sm">Faça login para salvar projetos na nuvem e interagir com a comunidade.</p>
-            <button
-              type="button"
-              className="rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-colors"
-              onClick={() => setLoginOpen(true)}
-            >
-              Entrar
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
 
 export function HomeClient({ multiMachines }: HomeClientProps) {
   const [activeSection, setActiveSection] = useState<ActiveSection>('projects')

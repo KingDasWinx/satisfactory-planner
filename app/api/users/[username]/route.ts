@@ -28,6 +28,7 @@ export async function GET(req: Request, { params }: Params) {
       name: true,
       image: true,
       profile: { select: { bio: true, isPrivate: true, links: true, badges: true } },
+      stats: { select: { level: true } },
       _count: {
         select: {
           followers: true,
@@ -49,6 +50,8 @@ export async function GET(req: Request, { params }: Params) {
       name: user.name,
       image: user.image,
       bio: '',
+      level: 1,
+      badges: [],
       counts: { followers: 0, following: 0, publicProjects: 0 },
       isFollowing: false,
       isPrivate: true,
@@ -69,6 +72,7 @@ export async function GET(req: Request, { params }: Params) {
     name: user.name,
     image: user.image,
     bio: user.profile?.bio ?? '',
+    level: user.stats?.level ?? 1,
     links: user.profile?.links ?? {},
     badges: user.profile?.badges ?? [],
     isPrivate,

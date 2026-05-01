@@ -25,6 +25,8 @@ export default async function PublicUserProfilePage({ params }: Props) {
     name: string | null
     image: string | null
     bio: string
+    level: number
+    badges: string[]
     isPrivate?: boolean
     counts: { followers: number; following: number; publicProjects: number }
     isFollowing: boolean
@@ -40,6 +42,8 @@ export default async function PublicUserProfilePage({ params }: Props) {
           name={profile.name}
           image={profile.image}
           bio={profile.bio}
+          level={profile.level}
+          badges={profile.badges}
           counts={profile.counts}
           isFollowing={profile.isFollowing}
           isMe={false}

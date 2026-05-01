@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/server/auth'
 import { prisma } from '@/lib/server/prisma'
 import { CollectionsPanel } from '@/components/me/CollectionsPanel'
+import { MeStatsCard } from '@/components/me/MeStatsCard'
 
 function fmt(ts: Date) {
   return ts.toLocaleDateString('pt-BR')
@@ -26,8 +27,26 @@ export default async function MePage() {
           <h1 className="text-lg font-bold text-slate-100">Minha conta</h1>
         </div>
 
+        <MeStatsCard />
+
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="/home"
+            className="rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-colors"
+          >
+            Abrir planejador
+          </a>
+        </div>
+
         <section className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 space-y-3">
-          <h2 className="text-sm font-bold text-slate-100">Meus projetos na nuvem</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-100">Meus projetos na nuvem</h2>
+            <div className="flex items-center gap-3 text-xs text-slate-600">
+              <span>{projects.length} projetos</span>
+              <span>·</span>
+              <span>{projects.filter(p => p.visibility === 'COMMUNITY').length} públicos</span>
+            </div>
+          </div>
           {projects.length === 0 ? (
             <p className="text-sm text-slate-600">Nenhum projeto na nuvem ainda.</p>
           ) : (

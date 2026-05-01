@@ -11,6 +11,21 @@ export interface ProjectMeta {
   tags?: string[]
   isPublic?: boolean
   authorName?: string
+  storage?: 'local' | 'cloud'
+}
+
+export type ProjectVisibility = 'private' | 'community'
+
+export interface CreateProjectInput {
+  name: string
+  description: string
+  visibility: ProjectVisibility
+}
+
+export type ProjectSaveTarget = 'local' | 'cloud'
+
+export interface CreateProjectFormInput extends CreateProjectInput {
+  saveTarget: ProjectSaveTarget
 }
 
 export interface ProjectData {

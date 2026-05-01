@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { SessionProviders } from '@/components/layout/SessionProviders'
 
 export const metadata: Metadata = {
   title: 'Satisfactory Factory Planner',
@@ -9,7 +10,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className="bg-[#0f1117] text-slate-200 font-sans antialiased">{children}</body>
+      <body className="bg-[#0f1117] text-slate-200 font-sans antialiased">
+        <SessionProviders>
+          {children}
+        </SessionProviders>
+      </body>
     </html>
   )
 }

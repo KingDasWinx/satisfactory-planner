@@ -25,7 +25,7 @@ function formatRelative(ts: number): string {
 export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
   const projects = useProjectStore((s) => s.projects)
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
-  const createProject = useProjectStore((s) => s.createProject)
+  const createProjectLocal = useProjectStore((s) => s.createProjectLocal)
   const renameProject = useProjectStore((s) => s.renameProject)
   const deleteProject = useProjectStore((s) => s.deleteProject)
   const loadProject = useProjectStore((s) => s.loadProject)
@@ -55,7 +55,7 @@ export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
 
   function handleCreate() {
     const name = newProjectName.trim() || 'Nova fábrica'
-    createProject(name)
+    createProjectLocal({ name, description: '', isPublic: false })
     setNewProjectName('')
     setCreatingNew(false)
     onClose()

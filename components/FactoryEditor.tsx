@@ -21,6 +21,7 @@ import { SearchMenu } from '@/components/panels/SearchMenu'
 import { ContextMenu } from '@/components/panels/ContextMenu'
 import { MagicPlannerWizard } from '@/components/panels/MagicPlannerWizard'
 import { ToolsBar } from '@/components/panels/ToolsBar'
+import { CommunityPanel } from '@/components/panels/CommunityPanel'
 import { CanvasBackground } from '@/components/layout/CanvasBackground'
 import { HelperLinesOverlay } from '@/components/layout/HelperLinesOverlay'
 import { MultiMachinesProvider } from '@/lib/gameDataContext'
@@ -84,7 +85,7 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
 
   const hydrateFromStorage = useProjectStore((s) => s.hydrateFromStorage)
   const loadProject = useProjectStore((s) => s.loadProject)
-  const createProject = useProjectStore((s) => s.createProject)
+  const createProjectLocal = useProjectStore((s) => s.createProjectLocal)
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
   const projects = useProjectStore((s) => s.projects)
 
@@ -120,7 +121,7 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
     }
 
     // Sem projeto salvo e sem projectId → cria um novo
-    if (!storedData) createProject('Minha fábrica')
+    if (!storedData) createProjectLocal({ name: 'Minha fábrica', description: '', isPublic: false })
     setHydrated(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -388,6 +389,10 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
             </svg>
             Modo visualização
           </div>
+        )}
+
+        {readOnly && projectId && (
+          <CommunityPanel projectId={projectId} />
         )}
 
         {!readOnly && (

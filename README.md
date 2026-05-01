@@ -113,6 +113,27 @@ Open **http://localhost:3000** in your browser.
 
 ---
 
+## 🔐 Cloud save (optional)
+
+By default, projects are saved only in your browser (`localStorage`) and **no login is required**.
+
+If you want to enable **cloud save** (Postgres + login), create a `.env` file:
+
+- `DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME?schema=public`
+- `AUTH_SECRET=...` (required)
+- `AUTH_TRUST_HOST=true` (may be required depending on your host)
+- `AUTH_GITHUB_ID=...` / `AUTH_GITHUB_SECRET=...` (optional)
+- `AUTH_GOOGLE_ID=...` / `AUTH_GOOGLE_SECRET=...` (optional)
+
+Then run Prisma generate/migrations:
+
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
+
+---
+
 ## 🏗️ Stack
 
 | Layer | Technology |
@@ -195,3 +216,4 @@ See [LICENSE](LICENSE) for the full text.
 - [Satisfactory (official game)](https://www.satisfactorygame.com/)
 - [@xyflow/react — graph library](https://reactflow.dev/)
 - [Issues](https://github.com/<your-username>/satisfactory-planner/issues)
+

@@ -26,11 +26,8 @@ export function EditProfilePanel({
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null)
 
-  useEffect(() => {
-    setBio(initialBio)
-    setIsPrivate(initialIsPrivate)
-    setLinks(initialLinks)
-  }, [initialBio, initialIsPrivate, initialLinks])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setBio(initialBio); setIsPrivate(initialIsPrivate); setLinks(initialLinks) }, [])
 
   const canSave = useMemo(() => bio.trim().length <= 160, [bio])
 

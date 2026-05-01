@@ -22,11 +22,9 @@ export function EditProfileForm({ initialBio = '', initialIsPrivate = false, ini
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
 
-  useEffect(() => {
-    setBio(initialBio)
-    setIsPrivate(initialIsPrivate)
-    setLinks(initialLinks)
-  }, [initialBio, initialIsPrivate, initialLinks])
+  // sync only when the component is remounted (key-based reset from parent)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setBio(initialBio); setIsPrivate(initialIsPrivate); setLinks(initialLinks) }, [])
 
   const canSave = useMemo(() => bio.trim().length <= 160, [bio])
 

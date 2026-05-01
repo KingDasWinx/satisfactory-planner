@@ -8,7 +8,6 @@ import { CreateProjectModal } from './CreateProjectModal'
 import { LoginModal } from '@/components/auth/LoginModal'
 import { useSession } from 'next-auth/react'
 import { CommunityProjectCard } from '@/components/community/CommunityProjectCard'
-import { UserSection } from './UserSection'
 import { SettingsSection } from './SettingsSection'
 import type { ProjectData } from '@/lib/types/projects'
 import type { MultiMachine } from '@/lib/types/game'
@@ -18,7 +17,7 @@ interface HomeClientProps {
   multiMachines: MultiMachine[]
 }
 
-type ActiveSection = 'projects' | 'community' | 'settings' | 'user'
+type ActiveSection = 'projects' | 'community' | 'settings'
 
 function IconGear({ className }: { className?: string }) {
   return (
@@ -54,7 +53,42 @@ function IconPlus() {
   )
 }
 
-function Sidebar({ active, onSelect }: { active: ActiveSection; onSelect: (s: ActiveSection) => void }) {
+function SidebarUserButton({ onOpenLogin }: { onOpenLogin: () => void }) {
+  const router = useRouter()
+  const { data: session } = useSession()
+  const username = (session?.user as unknown as { username?: string } | undefined)?.username ?? null
+  const displayName = session?.user?.name ?? username ?? null
+
+  function handleClick() {
+    if (!session?.user) { onOpenLogin(); return }
+    if (username) { router.push(`/u/@${username}`); return }
+    router.push('/me')
+  }
+
+  return (
+    <div className="px-2 py-3 border-t border-slate-800">
+      <button
+        onClick={handleClick}
+        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors w-full"
+      >
+        {session?.user?.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={session.user.image} alt={displayName ?? 'avatar'} className="w-6 h-6 rounded-full object-cover shrink-0" />
+        ) : (
+          <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
+            <IconUser className="w-3.5 h-3.5" />
+          </div>
+        )}
+        <span className="truncate">{displayName ?? 'Usuário'}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="ml-auto shrink-0 text-slate-600">
+          <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+function Sidebar({ active, onSelect, onOpenLogin }: { active: ActiveSection; onSelect: (s: ActiveSection) => void; onOpenLogin: () => void }) {
   const items: { id: ActiveSection; label: string; icon: React.ReactNode }[] = [
     { id: 'projects', label: 'Projetos', icon: <IconFolder /> },
     { id: 'community', label: 'Comunidade', icon: <IconUser /> },
@@ -90,22 +124,7 @@ function Sidebar({ active, onSelect }: { active: ActiveSection; onSelect: (s: Ac
         ))}
       </nav>
 
-      {/* User */}
-      <div className="px-2 py-3 border-t border-slate-800">
-        <button
-          onClick={() => onSelect('user')}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full
-            ${active === 'user'
-              ? 'bg-amber-500/10 text-amber-400'
-              : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-            }`}
-        >
-          <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
-            <IconUser className="w-3.5 h-3.5" />
-          </div>
-          Usuário
-        </button>
-      </div>
+      <SidebarUserButton onOpenLogin={onOpenLogin} />
     </aside>
   )
 }
@@ -380,16 +399,17 @@ function CommunitySection() {
 
 export function HomeClient({ multiMachines }: HomeClientProps) {
   const [activeSection, setActiveSection] = useState<ActiveSection>('projects')
+  const [loginOpen, setLoginOpen] = useState(false)
 
   return (
     <div className="flex h-screen bg-[#0f1117]">
-      <Sidebar active={activeSection} onSelect={setActiveSection} />
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <Sidebar active={activeSection} onSelect={setActiveSection} onOpenLogin={() => setLoginOpen(true)} />
 
       <main className="flex-1 min-w-0 overflow-hidden">
         {activeSection === 'projects' && <ProjectsSection multiMachines={multiMachines} />}
         {activeSection === 'community' && <CommunitySection />}
         {activeSection === 'settings' && <SettingsSection />}
-        {activeSection === 'user' && <UserSection />}
       </main>
     </div>
   )

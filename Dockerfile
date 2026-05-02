@@ -43,8 +43,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static   ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public          ./public
 
-# Prisma schema (needed by `prisma migrate deploy`)
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+# Prisma schema + config (necessários para `prisma migrate deploy`)
+COPY --from=builder --chown=nextjs:nodejs /app/prisma         ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
 # node_modules completo para o Prisma CLI conseguir rodar `migrate deploy`
 # (O runtime do Next.js usa o standalone e não depende disto)

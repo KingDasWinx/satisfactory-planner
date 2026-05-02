@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { useProjectStore } from '@/store/projectStore'
+import { useUiStore } from '@/store/uiStore'
 import { useSession } from 'next-auth/react'
+import { useT, LOCALE_LABELS, type Locale } from '@/lib/i18n'
 
 function IconPalette() {
   return (
@@ -52,17 +54,14 @@ function IconInfo() {
   )
 }
 
-const SHORTCUTS = [
-  { keys: ['Duplo clique'], action: 'Adicionar receita no canvas' },
-  { keys: ['Ctrl', 'Z'], action: 'Desfazer' },
-  { keys: ['Ctrl', 'Y'], action: 'Refazer' },
-  { keys: ['Ctrl', 'C'], action: 'Copiar nó selecionado' },
-  { keys: ['Ctrl', 'V'], action: 'Colar' },
-  { keys: ['Delete'], action: 'Deletar selecionado' },
-  { keys: ['Esc'], action: 'Voltar para seleção' },
-  { keys: ['T'], action: 'Ferramenta texto' },
-  { keys: ['F'], action: 'Ferramenta frame' },
-]
+function IconGlobe() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M12 3c-2.5 3-4 5.5-4 9s1.5 6 4 9M12 3c2.5 3 4 5.5 4 9s-1.5 6-4 9M3 12h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 function SectionHeader({ icon, title, description }: { icon: React.ReactNode; title: string; description?: string }) {
   return (
@@ -86,16 +85,13 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   )
 }
 
-function ApearancaSection() {
+function AppearanceSection() {
+  const t = useT()
+  const s = t.settings.appearance
   return (
     <Card>
-      <SectionHeader
-        icon={<IconPalette />}
-        title="Aparência"
-        description="Tema visual do planejador"
-      />
+      <SectionHeader icon={<IconPalette />} title={s.title} description={s.description} />
       <div className="flex gap-3">
-        {/* Dark — ativo (único disponível por ora) */}
         <button
           className="flex-1 rounded-xl border-2 border-amber-500 bg-slate-950 p-3 text-left transition-all"
           disabled
@@ -105,11 +101,10 @@ function ApearancaSection() {
             <div className="w-3 h-3 rounded-full bg-slate-800 border border-slate-700" />
             <div className="w-3 h-3 rounded-full bg-amber-500" />
           </div>
-          <p className="text-xs font-semibold text-slate-100">Escuro</p>
-          <p className="text-[11px] text-amber-400 mt-0.5">Ativo</p>
+          <p className="text-xs font-semibold text-slate-100">{s.dark}</p>
+          <p className="text-[11px] text-amber-400 mt-0.5">{s.active}</p>
         </button>
 
-        {/* Light — em breve */}
         <button
           className="flex-1 rounded-xl border border-slate-700 bg-slate-800/40 p-3 text-left opacity-40 cursor-not-allowed"
           disabled
@@ -119,28 +114,39 @@ function ApearancaSection() {
             <div className="w-3 h-3 rounded-full bg-slate-300 border border-slate-400" />
             <div className="w-3 h-3 rounded-full bg-amber-400" />
           </div>
-          <p className="text-xs font-semibold text-slate-400">Claro</p>
-          <p className="text-[11px] text-slate-600 mt-0.5">Em breve</p>
+          <p className="text-xs font-semibold text-slate-400">{s.light}</p>
+          <p className="text-[11px] text-slate-600 mt-0.5">{s.comingSoon}</p>
         </button>
       </div>
     </Card>
   )
 }
 
-function AtalhosSection() {
+function ShortcutsSection() {
+  const t = useT()
+  const s = t.settings.shortcuts
   const [open, setOpen] = useState(false)
+
+  const shortcuts = [
+    { keys: ['Double click'], action: s.actions.addRecipe },
+    { keys: ['Ctrl', 'Z'], action: s.actions.undo },
+    { keys: ['Ctrl', 'Y'], action: s.actions.redo },
+    { keys: ['Ctrl', 'C'], action: s.actions.copy },
+    { keys: ['Ctrl', 'V'], action: s.actions.paste },
+    { keys: ['Delete'], action: s.actions.delete },
+    { keys: ['Esc'], action: s.actions.escape },
+    { keys: ['T'], action: s.actions.text },
+    { keys: ['F'], action: s.actions.frame },
+  ]
+
   return (
     <Card>
-      <SectionHeader
-        icon={<IconKeyboard />}
-        title="Atalhos de teclado"
-        description="Comandos rápidos no editor de fábricas"
-      />
+      <SectionHeader icon={<IconKeyboard />} title={s.title} description={s.description} />
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center justify-between w-full text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors"
       >
-        <span>{open ? 'Ocultar atalhos' : 'Ver todos os atalhos'}</span>
+        <span>{open ? s.hide : s.show}</span>
         <svg
           width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden
           className={`transition-transform ${open ? 'rotate-180' : ''}`}
@@ -151,16 +157,16 @@ function AtalhosSection() {
 
       {open && (
         <div className="mt-2 rounded-xl border border-slate-800 overflow-hidden">
-          {SHORTCUTS.map((s, i) => (
+          {shortcuts.map((shortcut, i) => (
             <div
               key={i}
               className={`flex items-center justify-between px-4 py-2.5 text-xs ${
-                i < SHORTCUTS.length - 1 ? 'border-b border-slate-800' : ''
+                i < shortcuts.length - 1 ? 'border-b border-slate-800' : ''
               }`}
             >
-              <span className="text-slate-400">{s.action}</span>
+              <span className="text-slate-400">{shortcut.action}</span>
               <div className="flex items-center gap-1">
-                {s.keys.map((k) => (
+                {shortcut.keys.map((k) => (
                   <kbd
                     key={k}
                     className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[11px] font-mono text-slate-300"
@@ -177,7 +183,9 @@ function AtalhosSection() {
   )
 }
 
-function DadosSection() {
+function DataSection() {
+  const t = useT()
+  const s = t.settings.data
   const { data: session } = useSession()
   const exportCloudProjects = useProjectStore((s) => s.exportCloudProjects)
   const [exporting, setExporting] = useState(false)
@@ -199,17 +207,13 @@ function DadosSection() {
 
   return (
     <Card>
-      <SectionHeader
-        icon={<IconDatabase />}
-        title="Dados"
-        description="Exporte seus projetos em formato JSON"
-      />
+      <SectionHeader icon={<IconDatabase />} title={s.title} description={s.description} />
       <div className="space-y-2">
         {session?.user ? (
           <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
             <div>
-              <p className="text-xs font-medium text-slate-200">Projetos na nuvem</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Todos os seus projetos salvos na conta</p>
+              <p className="text-xs font-medium text-slate-200">{s.cloudProjects}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">{s.cloudProjectsDescription}</p>
             </div>
             <button
               type="button"
@@ -218,12 +222,12 @@ function DadosSection() {
               className="flex items-center gap-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-colors shrink-0"
             >
               <IconDownload />
-              {exporting ? 'Exportando...' : 'Exportar'}
+              {exporting ? s.exporting : s.export}
             </button>
           </div>
         ) : (
           <div className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
-            <p className="text-xs text-slate-500">Faça login para exportar projetos da nuvem.</p>
+            <p className="text-xs text-slate-500">{s.loginToExport}</p>
           </div>
         )}
       </div>
@@ -231,25 +235,56 @@ function DadosSection() {
   )
 }
 
-function SobreSection() {
+function LanguageSection() {
+  const t = useT()
+  const s = t.settings.language
+  const locale = useUiStore((st) => st.locale)
+  const setLocale = useUiStore((st) => st.setLocale)
+
   return (
     <Card>
-      <SectionHeader
-        icon={<IconInfo />}
-        title="Sobre"
-        description="Satisfactory Factory Planner"
-      />
+      <SectionHeader icon={<IconGlobe />} title={s.title} description={s.description} />
+      <div className="flex gap-3">
+        {(Object.entries(LOCALE_LABELS) as [Locale, string][]).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setLocale(key)}
+            className={`flex-1 rounded-xl border-2 px-4 py-3 text-left transition-all ${
+              locale === key
+                ? 'border-amber-500 bg-slate-950'
+                : 'border-slate-700 bg-slate-800/40 hover:border-slate-600'
+            }`}
+          >
+            <p className={`text-xs font-semibold ${locale === key ? 'text-slate-100' : 'text-slate-400'}`}>
+              {label}
+            </p>
+            {locale === key && (
+              <p className="text-[11px] text-amber-400 mt-0.5">{t.settings.appearance.active}</p>
+            )}
+          </button>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function AboutSection() {
+  const t = useT()
+  const s = t.settings.about
+  return (
+    <Card>
+      <SectionHeader icon={<IconInfo />} title={s.title} description={s.description} />
       <div className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 space-y-1">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-500">Versão</span>
+          <span className="text-slate-500">{s.version}</span>
           <span className="text-slate-300 font-mono">0.1.0-dev</span>
         </div>
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-500">Jogo</span>
+          <span className="text-slate-500">{s.game}</span>
           <span className="text-slate-300">Satisfactory 1.0</span>
         </div>
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-500">Licença</span>
+          <span className="text-slate-500">{s.license}</span>
           <span className="text-slate-300">GPL-3.0</span>
         </div>
       </div>
@@ -258,20 +293,24 @@ function SobreSection() {
 }
 
 export function SettingsSection() {
+  const t = useT()
+  const s = t.settings
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center px-8 py-6 border-b border-slate-800 shrink-0">
         <div>
-          <h1 className="text-lg font-bold text-slate-100">Configurações</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Preferências do planejador</p>
+          <h1 className="text-lg font-bold text-slate-100">{s.title}</h1>
+          <p className="text-xs text-slate-500 mt-0.5">{s.subtitle}</p>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-6 space-y-5">
-          <ApearancaSection />
-          <AtalhosSection />
-          <SobreSection />
+          <AppearanceSection />
+          <LanguageSection />
+          <ShortcutsSection />
+          <DataSection />
+          <AboutSection />
         </div>
       </div>
     </div>

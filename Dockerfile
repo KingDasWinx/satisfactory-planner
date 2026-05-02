@@ -17,11 +17,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client (uses schema.prisma — no DB needed here)
-RUN npx prisma generate
+# Generate Prisma client — DATABASE_URL fictícia apenas para satisfazer o Prisma 7 no build
+RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npx prisma generate
 
-# Build Next.js in standalone mode (produces .next/standalone/)
-RUN npm run build
+# Build Next.js em modo standalone — mesma variável fictícia para evitar erros do Prisma
+RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npm run build
 
 
 # ─────────────────────────────────────────────────────────────

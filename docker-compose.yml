@@ -1,14 +1,9 @@
-networks:
-  planner:
-
 services:
 
   # ── PostgreSQL ────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     restart: unless-stopped
-    networks:
-      - planner
     environment:
       POSTGRES_USER:     ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -28,8 +23,6 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    networks:
-      - planner
     ports:
       - "${APP_PORT:-3000}:3000"
     depends_on:

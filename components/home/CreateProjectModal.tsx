@@ -32,6 +32,13 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
     setVisibility('private')
   }, [open, initialName])
 
+  // Se o destino for local, garante que visibilidade não seja 'community'
+  useEffect(() => {
+    if (saveTarget === 'local' && visibility === 'community') {
+      setVisibility('private')
+    }
+  }, [saveTarget, visibility])
+
   useEffect(() => {
     if (!open) return
     function onKeyDown(e: KeyboardEvent) {
@@ -112,23 +119,27 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(['private', 'community'] as const).map((v) => {
                   const active = visibility === v
+                  const disabled = v === 'community' && saveTarget === 'local'
                   return (
                     <button
                       key={v}
                       type="button"
+                      disabled={disabled}
                       className={`rounded-xl border px-3 py-2 text-left transition-colors ${
-                        active
-                          ? 'border-amber-500/60 bg-amber-500/10'
-                          : 'border-slate-700 bg-slate-900 hover:bg-slate-800/60'
+                        disabled
+                          ? 'border-slate-800 bg-slate-900/40 opacity-40 cursor-not-allowed'
+                          : active
+                            ? 'border-amber-500/60 bg-amber-500/10'
+                            : 'border-slate-700 bg-slate-900 hover:bg-slate-800/60'
                       }`}
-                      onClick={() => setVisibility(v)}
+                      onClick={() => !disabled && setVisibility(v)}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`text-sm font-semibold ${active ? 'text-amber-300' : 'text-slate-200'}`}>
+                        <span className={`text-sm font-semibold ${active && !disabled ? 'text-amber-300' : 'text-slate-200'}`}>
                           {visibilityLabel(v)}
                         </span>
-                        <span className={`text-xs ${active ? 'text-amber-400' : 'text-slate-500'}`}>
-                          {active ? 'Selecionado' : 'Selecionar'}
+                        <span className={`text-xs ${active && !disabled ? 'text-amber-400' : 'text-slate-500'}`}>
+                          {disabled ? 'Requer nuvem' : active ? 'Selecionado' : 'Selecionar'}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-1 leading-relaxed">

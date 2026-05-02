@@ -7,6 +7,8 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# prisma generate só precisa do schema, não de banco real
+ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 RUN npx prisma generate
 ARG DATABASE_URL
 ARG AUTH_SECRET

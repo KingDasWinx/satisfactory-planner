@@ -21,7 +21,9 @@ function createPrismaClient(): PrismaClient {
 export function getPrisma(): PrismaClient {
   if (globalThis.__prismaServer) return globalThis.__prismaServer
   const client = createPrismaClient()
-  if (process.env.NODE_ENV !== 'production') globalThis.__prismaServer = client
+  // persist in all envs — without this, production creates a new client per
+  // request which breaks $transaction (P2028: transaction not found)
+  globalThis.__prismaServer = client
   return client
 }
 

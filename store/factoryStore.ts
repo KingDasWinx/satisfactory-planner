@@ -37,6 +37,7 @@ type FactoryStore = {
   edges: Edge[]
   menu: MenuContext | null
   helperLines: HelperLinesState | null
+  isDirty: boolean
 
   history: HistoryEntry[]
   future: HistoryEntry[]
@@ -106,6 +107,7 @@ type FactoryStore = {
   undo: () => void
   redo: () => void
   setGhostPosition: (flowPos: { x: number; y: number }, screenPos: { x: number; y: number }) => void
+  markSaved: () => void
 
   _pushHistory: () => void
 }
@@ -127,6 +129,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
   edges: [],
   menu: null,
   helperLines: null,
+  isDirty: false,
   history: [],
   future: [],
   clipboard: null,
@@ -867,13 +870,15 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
   },
 
   // Deep copy do data para evitar referências compartilhadas entre snapshots
+  markSaved: () => set({ isDirty: false }),
+
   _pushHistory: () => {
     const { nodes, edges, history } = get()
     const snapshot: HistoryEntry = {
       nodes: deepCopyNodes(nodes),
       edges: shallowCopyEdges(edges),
     }
-    set({ history: [...history.slice(-49), snapshot], future: [] })
+    set({ history: [...history.slice(-49), snapshot], future: [], isDirty: true })
   },
 
   undo: () => {

@@ -21,7 +21,6 @@ import { SearchMenu } from '@/components/panels/SearchMenu'
 import { ContextMenu } from '@/components/panels/ContextMenu'
 import { MagicPlannerWizard } from '@/components/panels/MagicPlannerWizard'
 import { ToolsBar } from '@/components/panels/ToolsBar'
-import { CommunityPanel } from '@/components/panels/CommunityPanel'
 import { CanvasBackground } from '@/components/layout/CanvasBackground'
 import { HelperLinesOverlay } from '@/components/layout/HelperLinesOverlay'
 import { MultiMachinesProvider } from '@/lib/gameDataContext'
@@ -80,11 +79,13 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
   const setGhostPosition = useFactoryStore((s) => s.setGhostPosition)
   const undo = useFactoryStore((s) => s.undo)
   const redo = useFactoryStore((s) => s.redo)
+  const isDirty = useFactoryStore((s) => s.isDirty)
   const addTextNode = useFactoryStore((s) => s.addTextNode)
   const addFrameNode = useFactoryStore((s) => s.addFrameNode)
 
   const hydrateFromStorage = useProjectStore((s) => s.hydrateFromStorage)
   const loadProject = useProjectStore((s) => s.loadProject)
+  const hydrateCloudProject = useProjectStore((s) => s.hydrateCloudProject)
   const createProjectLocal = useProjectStore((s) => s.createProjectLocal)
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
   const projects = useProjectStore((s) => s.projects)
@@ -105,24 +106,57 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    // Hidrata o store com localStorage na montagem
-    const { activeId, data: storedData } = hydrateFromStorage()
-
-    // Se veio projectId pela URL, carrega esse projeto específico
-    const targetId = projectId ?? activeId
-    if (targetId) {
-      const data = loadProject(targetId)
-      if (data) {
-        useFactoryStore.setState({ nodes: data.nodes, edges: data.edges, history: [], future: [] })
-        setTimeout(() => rfInstance.current?.setViewport(data.viewport), 50)
+    async function load() {
+      // View de comunidade (readOnly + projectId): busca direto da API sem sujar localStorage do visitante
+      if (readOnly && projectId) {
+        const res = await fetch(`/api/projects/${projectId}`).catch(() => null)
+        if (res?.ok) {
+          const json = await res.json().catch(() => null) as { data?: { nodes?: unknown[]; edges?: unknown[]; viewport?: unknown } | null } | null
+          const flowData = json?.data
+          useFactoryStore.setState({
+            nodes: Array.isArray(flowData?.nodes) ? (flowData!.nodes as FactoryNode[]) : [],
+            edges: Array.isArray(flowData?.edges) ? (flowData!.edges as Edge[]) : [],
+            history: [],
+            future: [],
+          })
+          const vp = flowData?.viewport as { x: number; y: number; zoom: number } | undefined
+          setTimeout(() => rfInstance.current?.setViewport(vp ?? { x: 0, y: 0, zoom: 1 }), 50)
+        }
         setHydrated(true)
         return
       }
+
+      // Modo edição: hidrata do localStorage primeiro
+      const { activeId, data: storedData } = hydrateFromStorage()
+      const targetId = projectId ?? activeId
+
+      if (targetId) {
+        const localData = loadProject(targetId)
+        if (localData) {
+          useFactoryStore.setState({ nodes: localData.nodes, edges: localData.edges, history: [], future: [] })
+          setTimeout(() => rfInstance.current?.setViewport(localData.viewport), 50)
+          setHydrated(true)
+          return
+        }
+
+        // Não está em localStorage (cloud project em nova sessão) → busca da API e salva localmente
+        if (projectId) {
+          const remoteData = await hydrateCloudProject(projectId)
+          if (remoteData) {
+            useFactoryStore.setState({ nodes: remoteData.nodes, edges: remoteData.edges, history: [], future: [] })
+            setTimeout(() => rfInstance.current?.setViewport(remoteData.viewport), 50)
+            setHydrated(true)
+            return
+          }
+        }
+      }
+
+      // Nenhum projeto encontrado → cria um local novo
+      if (!storedData) createProjectLocal({ name: 'Minha fábrica', description: '', isPublic: false })
+      setHydrated(true)
     }
 
-    // Sem projeto salvo e sem projectId → cria um novo
-    if (!storedData) createProjectLocal({ name: 'Minha fábrica', description: '', isPublic: false })
-    setHydrated(true)
+    void load()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -391,10 +425,6 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
           </div>
         )}
 
-        {readOnly && projectId && (
-          <CommunityPanel projectId={projectId} />
-        )}
-
         {!readOnly && (
           <ToolsBar
             activeTool={activeTool}
@@ -404,7 +434,7 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
             onRedo={redo}
             onLoadProject={handleLoadProject}
             projectName={activeMeta?.name ?? ''}
-            isSaved={true}
+            isSaved={!isDirty}
           />
         )}
 

@@ -18,6 +18,14 @@ interface ToolsBarProps {
   isSaved: boolean
 }
 
+function IconArrowLeft() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function IconFolder() {
   return (
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="flex-shrink-0" aria-hidden>
@@ -29,10 +37,53 @@ function IconFolder() {
   )
 }
 
-function IconArrowLeft() {
+function IconPointer() {
   return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M5 3l14 9-7 1-4 7L5 3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconText() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M4 7V5h16v2M12 5v14M9 19h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconFrame() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 2" />
+    </svg>
+  )
+}
+
+function IconUndo() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M3 7h11a6 6 0 0 1 0 12H7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 3L3 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconRedo() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M21 7H10a6 6 0 0 0 0 12h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconDownload() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M12 3v13M7 11l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 20h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   )
 }
@@ -80,7 +131,7 @@ export function ToolsBar({
 
         {/* Ferramentas de criação */}
         <button
-          className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+          className={`flex items-center justify-center rounded-lg p-1.5 transition-colors ${
             activeTool === 'pointer'
               ? 'bg-slate-700 text-slate-100'
               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
@@ -88,10 +139,10 @@ export function ToolsBar({
           title="Seleção (Esc)"
           onClick={() => onSetTool('pointer')}
         >
-          ↖
+          <IconPointer />
         </button>
         <button
-          className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+          className={`flex items-center justify-center rounded-lg p-1.5 transition-colors ${
             activeTool === 'text'
               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
@@ -99,10 +150,10 @@ export function ToolsBar({
           title="Nota de texto (T)"
           onClick={() => onSetTool(activeTool === 'text' ? 'pointer' : 'text')}
         >
-          T
+          <IconText />
         </button>
         <button
-          className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+          className={`flex items-center justify-center rounded-lg p-1.5 transition-colors ${
             activeTool === 'frame'
               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
@@ -110,36 +161,37 @@ export function ToolsBar({
           title="Área/Frame (F)"
           onClick={() => onSetTool(activeTool === 'frame' ? 'pointer' : 'frame')}
         >
-          ▭
+          <IconFrame />
         </button>
 
         <div className="w-px h-5 bg-slate-700 mx-1" />
 
         {/* Undo / Redo */}
         <button
-          className="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
+          className="flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
           title="Desfazer (Ctrl+Z)"
           onClick={onUndo}
         >
-          ↩
+          <IconUndo />
         </button>
         <button
-          className="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
+          className="flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
           title="Refazer (Ctrl+Y)"
           onClick={onRedo}
         >
-          ↪
+          <IconRedo />
         </button>
 
         <div className="w-px h-5 bg-slate-700 mx-1" />
 
         {/* Exportar PNG */}
         <button
-          className="rounded-lg px-2.5 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
           title="Exportar PNG"
           onClick={onExportPng}
         >
-          ⬇ PNG
+          <IconDownload />
+          <span>PNG</span>
         </button>
       </div>
 

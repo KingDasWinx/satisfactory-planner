@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/server/prisma'
 import { rateLimit } from '@/lib/server/rateLimit'
-import { normalizeUsername } from '@/lib/server/usernames'
+import { normalizeUsernameFromRouteParam } from '@/lib/server/usernames'
 
 interface Params {
   params: Promise<{ username: string }>
@@ -9,7 +9,7 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { username: raw } = await params
-  const username = normalizeUsername(raw)
+  const username = normalizeUsernameFromRouteParam(raw)
   if (!username) return NextResponse.json({ error: 'Usuário inválido.' }, { status: 400 })
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'

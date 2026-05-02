@@ -47,7 +47,7 @@ export function EditProfilePanel({
   }
 
   return (
-    <div className="border-t border-slate-800 pt-6 space-y-5">
+    <div className="space-y-5">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Bio */}
         <div className="space-y-1.5">

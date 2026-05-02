@@ -12,6 +12,7 @@ interface UseAutoSaveProps {
 export function useAutoSave({ rfInstance }: UseAutoSaveProps) {
   const nodes = useFactoryStore((s) => s.nodes)
   const edges = useFactoryStore((s) => s.edges)
+  const markSaved = useFactoryStore((s) => s.markSaved)
   const saveActiveProject = useProjectStore((s) => s.saveActiveProject)
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
 
@@ -25,10 +26,11 @@ export function useAutoSave({ rfInstance }: UseAutoSaveProps) {
     timerRef.current = setTimeout(() => {
       const viewport = rfInstance.current?.getViewport() ?? { x: 0, y: 0, zoom: 1 }
       saveActiveProject(nodes, edges, viewport)
+      markSaved()
     }, DEBOUNCE_MS)
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [nodes, edges, activeProjectId, saveActiveProject, rfInstance])
+  }, [nodes, edges, activeProjectId, saveActiveProject, markSaved, rfInstance])
 }

@@ -10,6 +10,7 @@ import { StorageNode } from '@/components/nodes/StorageNode'
 import { TextNode } from '@/components/nodes/TextNode'
 import { FrameNode } from '@/components/nodes/FrameNode'
 import { MultiMachinesProvider } from '@/lib/gameDataContext'
+import { ProjectManageModal } from './ProjectManageModal'
 import type { ProjectMeta } from '@/lib/types/projects'
 import type { ProjectData } from '@/lib/types/projects'
 import type { MultiMachine } from '@/lib/types/game'
@@ -43,7 +44,7 @@ interface ProjectCardProps {
 
 export const ProjectCard = memo(function ProjectCard({ meta, data, multiMachines, onDelete }: ProjectCardProps) {
   const router = useRouter()
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
 
   const nodeCount = data?.nodes.length ?? 0
   const edgeCount = data?.edges.length ?? 0
@@ -109,55 +110,16 @@ export const ProjectCard = memo(function ProjectCard({ meta, data, multiMachines
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-semibold text-slate-100 truncate leading-tight">{meta.name}</p>
 
-          {/* Ações — visíveis no hover */}
-          <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              className="rounded p-1 text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-              title="Abrir editor"
-              onClick={openEditor}
-            >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8zM10 4l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <button
-              className="rounded p-1 text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-              title="Modo visualização"
-              onClick={() => router.push(`/project/${meta.id}/view`)}
-            >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.3" />
-                <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
-              </svg>
-            </button>
-
-            {confirmDelete ? (
-              <>
-                <button
-                  className="rounded px-1.5 py-0.5 text-xs text-red-400 hover:text-red-300 font-medium"
-                  onClick={() => onDelete(meta.id)}
-                >
-                  Sim
-                </button>
-                <button
-                  className="rounded px-1.5 py-0.5 text-xs text-slate-500 hover:text-slate-300"
-                  onClick={() => setConfirmDelete(false)}
-                >
-                  Não
-                </button>
-              </>
-            ) : (
-              <button
-                className="rounded p-1 text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors"
-                title="Excluir projeto"
-                onClick={() => setConfirmDelete(true)}
-              >
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
-                  <path d="M3 4h10M6 4V2.5h4V4M5 4v8.5h6V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-          </div>
+          {/* Botão de opções */}
+          <button
+            className="shrink-0 rounded p-1 text-slate-500 hover:text-slate-200 hover:bg-slate-800 opacity-0 group-hover:opacity-100 transition-colors"
+            title="Opções do projeto"
+            onClick={(e) => { e.stopPropagation(); setManageOpen(true) }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" />
+            </svg>
+          </button>
         </div>
 
         {meta.description && (
@@ -181,6 +143,14 @@ export const ProjectCard = memo(function ProjectCard({ meta, data, multiMachines
           </div>
         )}
       </div>
+
+      {manageOpen && (
+        <ProjectManageModal
+          meta={meta}
+          onClose={() => setManageOpen(false)}
+          onDelete={onDelete}
+        />
+      )}
     </div>
   )
 })

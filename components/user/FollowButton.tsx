@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useUiStore } from '@/store/uiStore'
 
 interface FollowButtonProps {
   username: string
@@ -11,6 +12,7 @@ export function FollowButton({ username, initialIsFollowing }: FollowButtonProps
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const openLoginModal = useUiStore((s) => s.openLoginModal)
 
   useEffect(() => {
     setIsFollowing(initialIsFollowing)
@@ -25,7 +27,7 @@ export function FollowButton({ username, initialIsFollowing }: FollowButtonProps
 
     setLoading(false)
     if (!res) { setError('Falha de rede.'); return }
-    if (res.status === 401) { setError('Faça login para seguir.'); return }
+    if (res.status === 401) { openLoginModal(); return }
     if (!res.ok) { setError('Não foi possível atualizar.'); return }
 
     setIsFollowing((v) => !v)
@@ -49,4 +51,3 @@ export function FollowButton({ username, initialIsFollowing }: FollowButtonProps
     </div>
   )
 }
-

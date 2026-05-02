@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect, useId, useMemo, useState } from 'react'
-import type { CreateProjectFormInput, ProjectSaveTarget, ProjectVisibility } from '@/lib/types/projects'
+import { useEffect, useId, useMemo } from 'react'
+import { useState } from 'react'
+import { useSession } from 'next-auth/react'
+import type { CreateProjectFormInput, ProjectVisibility } from '@/lib/types/projects'
 
 interface CreateProjectModalProps {
   open: boolean
@@ -16,17 +18,18 @@ function visibilityLabel(v: ProjectVisibility): string {
 
 export function CreateProjectModal({ open, initialName, onClose, onCreate }: CreateProjectModalProps) {
   const titleId = useId()
+  const { status } = useSession()
   const [name, setName] = useState(initialName ?? '')
   const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<ProjectVisibility>('private')
-  const [saveTarget, setSaveTarget] = useState<ProjectSaveTarget>('local')
+
+  const saveTarget = status === 'authenticated' ? 'cloud' : 'local'
 
   useEffect(() => {
     if (!open) return
     setName(initialName ?? '')
     setDescription('')
     setVisibility('private')
-    setSaveTarget('local')
   }, [open, initialName])
 
   useEffect(() => {
@@ -139,39 +142,16 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
               </div>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-slate-300">Salvar</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(['local', 'cloud'] as const).map((t) => {
-                  const active = saveTarget === t
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      className={`rounded-xl border px-3 py-2 text-left transition-colors ${
-                        active
-                          ? 'border-amber-500/60 bg-amber-500/10'
-                          : 'border-slate-700 bg-slate-900 hover:bg-slate-800/60'
-                      }`}
-                      onClick={() => setSaveTarget(t)}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className={`text-sm font-semibold ${active ? 'text-amber-300' : 'text-slate-200'}`}>
-                          {t === 'local' ? 'Local' : 'Nuvem'}
-                        </span>
-                        <span className={`text-xs ${active ? 'text-amber-400' : 'text-slate-500'}`}>
-                          {active ? 'Selecionado' : 'Selecionar'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                        {t === 'local'
-                          ? 'Salva apenas neste navegador (sem login).'
-                          : 'Salva no banco (login obrigatório).'}
-                      </p>
-                    </button>
-                  )
-                })}
-              </div>
+            <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="text-slate-500 shrink-0">
+                {saveTarget === 'cloud'
+                  ? <><path d="M18 10a6 6 0 0 0-12 0c0 .34.03.67.08 1A5 5 0 0 0 7 21h10a5 5 0 0 0 1-9.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></>
+                  : <><rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" /><path d="M8 20h8M12 18v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></>
+                }
+              </svg>
+              <p className="text-xs text-slate-400">
+                {saveTarget === 'cloud' ? 'Salvo na nuvem (conta conectada)' : 'Salvo localmente neste navegador'}
+              </p>
             </div>
           </div>
 

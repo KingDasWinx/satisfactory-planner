@@ -121,3 +121,39 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ ok: true })
 }
 
+export async function PATCH(req: Request, { params }: Params) {
+  const { id } = await params
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  const uid = (session.user as unknown as { id?: string }).id
+  if (!uid) return NextResponse.json({ error: 'Sessão inválida.' }, { status: 401 })
+
+  const body = await req.json().catch(() => null) as Record<string, unknown> | null
+  if (!body || typeof body !== 'object') return NextResponse.json({ error: 'Payload inválido.' }, { status: 400 })
+
+  const project = await prisma.project.findUnique({ where: { id }, select: { id: true, ownerId: true, visibility: true } })
+  if (!project) return NextResponse.json({ error: 'Não encontrado.' }, { status: 404 })
+  if (project.ownerId !== uid) return NextResponse.json({ error: 'Proibido.' }, { status: 403 })
+
+  const name = typeof body.name === 'string' ? body.name.trim() : undefined
+  const description = typeof body.description === 'string' ? body.description.trim() : undefined
+  const isPublic = typeof body.isPublic === 'boolean' ? body.isPublic : undefined
+  const publishNow = isPublic === true && project.visibility !== 'COMMUNITY'
+
+  await prisma.project.update({
+    where: { id },
+    data: {
+      ...(name !== undefined && name.length > 0 ? { name } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(isPublic !== undefined ? { visibility: isPublic ? 'COMMUNITY' : 'PRIVATE' } : {}),
+    },
+  })
+
+  if (publishNow) {
+    await addPoints(uid, 'project_published')
+    await grantAchievement(uid, 'first_project_published')
+  }
+
+  return NextResponse.json({ ok: true })
+}
+

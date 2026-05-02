@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation'
 import { auth } from '@/lib/server/auth'
 import { prisma } from '@/lib/server/prisma'
-import { normalizeUsername } from '@/lib/server/usernames'
+import { normalizeUsernameFromRouteParam } from '@/lib/server/usernames'
 import { PublicProfileHeader } from '@/components/user/PublicProfileHeader'
 import { UserProjectsGrid } from '@/components/user/UserProjectsGrid'
 import { FollowersList } from '@/components/user/FollowersList'
 import { FollowingList } from '@/components/user/FollowingList'
 import { FeaturedProjects } from '@/components/user/FeaturedProjects'
 import { EditProfilePanel } from '@/components/user/EditProfilePanel'
+import { MyAccountTab } from '@/components/user/MyAccountTab'
 
 interface Props {
   params: Promise<{ username: string }>
@@ -17,13 +18,12 @@ interface Props {
 export default async function PublicUserProfilePage({ params, searchParams }: Props) {
   const { username } = await params
   const { tab } = await searchParams
-  const cleaned = username.startsWith('@') ? username.slice(1) : username
 
   const session = await auth()
   const viewerId = (session?.user as unknown as { id?: string } | undefined)?.id ?? null
   const viewerUsername = (session?.user as unknown as { username?: string } | undefined)?.username ?? null
 
-  const usernameNorm = normalizeUsername(cleaned)
+  const usernameNorm = normalizeUsernameFromRouteParam(username)
   if (!usernameNorm) return notFound()
 
   const isMe = viewerUsername?.toLowerCase() === usernameNorm
@@ -56,7 +56,24 @@ export default async function PublicUserProfilePage({ params, searchParams }: Pr
       })) !== null
     : false
 
+  const isBlocked = viewerId && !isMe
+    ? (await prisma.userBlock.findUnique({
+        where: { blockerId_blockedId: { blockerId: viewerId, blockedId: user.id } },
+        select: { id: true },
+      })) !== null
+    : false
+
   const activeTab = tab ?? 'destaques'
+
+  // Busca projetos cloud apenas para o dono do perfil
+  const cloudProjects = isMe
+    ? await prisma.project.findMany({
+        where: { ownerId: user.id },
+        orderBy: { updatedAt: 'desc' },
+        select: { id: true, name: true, description: true, visibility: true, updatedAt: true },
+        take: 200,
+      })
+    : []
 
   const profileBio = user.profile?.bio ?? ''
   const profileIsPrivate = user.profile?.isPrivate ?? false
@@ -65,8 +82,8 @@ export default async function PublicUserProfilePage({ params, searchParams }: Pr
   const profileLevel = user.stats?.level ?? 1
 
   return (
-    <main className="min-h-screen bg-[#0f1117]">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="px-4 py-8">
+      <div className="max-w-5xl mx-auto">
 
         <PublicProfileHeader
           username={user.username!}
@@ -77,7 +94,10 @@ export default async function PublicUserProfilePage({ params, searchParams }: Pr
           badges={profileBadges}
           counts={{ followers: user._count.followers, following: user._count.following, publicProjects }}
           isFollowing={isFollowing}
+          isBlocked={isBlocked}
           isMe={isMe}
+          isLoggedIn={!!viewerId}
+          isPrivate={isPrivate}
           activeTab={activeTab}
         />
 
@@ -89,7 +109,7 @@ export default async function PublicUserProfilePage({ params, searchParams }: Pr
         ) : (
           <div>
             {isMe && activeTab === 'editar' && (
-              <div className="bg-slate-900 border-x border-b border-slate-800 rounded-b-2xl px-6 py-6">
+              <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 px-6 py-6">
                 <EditProfilePanel
                   initialBio={profileBio}
                   initialIsPrivate={profileIsPrivate}
@@ -98,7 +118,7 @@ export default async function PublicUserProfilePage({ params, searchParams }: Pr
               </div>
             )}
 
-            {activeTab !== 'editar' && (
+            {activeTab !== 'editar' && activeTab !== 'conta' && (
               <div className="mt-6 space-y-6">
                 {activeTab === 'destaques' && <FeaturedProjects username={user.username!} />}
                 {activeTab === 'projetos' && <UserProjectsGrid username={user.username!} />}
@@ -106,9 +126,19 @@ export default async function PublicUserProfilePage({ params, searchParams }: Pr
                 {activeTab === 'seguindo' && <FollowingList username={user.username!} />}
               </div>
             )}
+
+            {isMe && activeTab === 'conta' && (
+              <MyAccountTab
+                projects={cloudProjects.map((p) => ({
+                  ...p,
+                  description: p.description,
+                  updatedAt: p.updatedAt.toISOString(),
+                }))}
+              />
+            )}
           </div>
         )}
       </div>
-    </main>
+    </div>
   )
 }

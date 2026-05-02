@@ -58,13 +58,15 @@ type ProjectStore = {
   moveActiveProjectToCloud: () => Promise<string | null>
   exportCloudProjects: () => Promise<unknown | null>
 
-  // Retorna o ProjectData do projeto ativo para o auto-save usar
   saveActiveProject: (nodes: FactoryNode[], edges: Edge[], viewport: { x: number; y: number; zoom: number }) => void
   loadProject: (id: string) => ProjectData | null
+  // Busca projeto da API quando não está em localStorage (cloud/comunidade)
+  hydrateCloudProject: (id: string) => Promise<ProjectData | null>
   createProjectLocal: (input: { name: string; description: string; isPublic: boolean }) => string
   createProjectCloud: (input: { name: string; description: string; isPublic: boolean }) => Promise<string | null>
   renameProject: (id: string, name: string) => void
-  deleteProject: (id: string) => string | null  // retorna novo activeId ou null
+  updateProjectMeta: (id: string, updates: { name?: string; description?: string; isPublic?: boolean }) => void
+  deleteProject: (id: string) => string | null
   setActiveProjectId: (id: string) => void
   hydrateFromStorage: () => { activeId: string | null; data: ProjectData | null }
 }
@@ -118,6 +120,47 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   loadProject: (id) => {
     const data = readProjectData(id)
     if (!data) return null
+    localStorage.setItem(STORAGE_ACTIVE, id)
+    set({ activeProjectId: id })
+    return data
+  },
+
+  hydrateCloudProject: async (id) => {
+    const res = await fetch(`/api/projects/${id}`).catch(() => null)
+    if (!res?.ok) return null
+
+    const json = await res.json().catch(() => null) as {
+      meta?: Record<string, unknown>
+      data?: Partial<ProjectData> | null
+    } | null
+    if (!json) return null
+
+    const raw = json.meta ?? {}
+    const cloudMeta: ProjectMeta = {
+      id,
+      name: typeof raw.name === 'string' ? raw.name : 'Projeto',
+      description: typeof raw.description === 'string' ? raw.description : '',
+      isPublic: raw.isPublic === true,
+      storage: 'cloud',
+      createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+      updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : Date.now(),
+    }
+
+    const flowData = json.data
+    const data: ProjectData = {
+      meta: cloudMeta,
+      nodes: Array.isArray(flowData?.nodes) ? (flowData.nodes as ProjectData['nodes']) : [],
+      edges: Array.isArray(flowData?.edges) ? (flowData.edges as ProjectData['edges']) : [],
+      viewport: (flowData?.viewport as ProjectData['viewport']) ?? { x: 0, y: 0, zoom: 1 },
+    }
+
+    writeProjectData(data)
+    const { projects } = get()
+    if (!projects.find((p) => p.id === id)) {
+      const updated = [...projects, cloudMeta]
+      localStorage.setItem(STORAGE_INDEX, JSON.stringify(updated))
+      set({ projects: updated })
+    }
     localStorage.setItem(STORAGE_ACTIVE, id)
     set({ activeProjectId: id })
     return data
@@ -218,9 +261,27 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     )
     localStorage.setItem(STORAGE_INDEX, JSON.stringify(updated))
     set({ projects: updated })
-    // Atualiza também os dados persistidos
     const data = readProjectData(id)
     if (data) writeProjectData({ ...data, meta: { ...data.meta, name, updatedAt: Date.now() } })
+  },
+
+  updateProjectMeta: (id, updates) => {
+    const { projects } = get()
+    const meta = projects.find((p) => p.id === id)
+    if (!meta) return
+    const updatedMeta: ProjectMeta = { ...meta, ...updates, updatedAt: Date.now() }
+    const updatedProjects = projects.map((p) => (p.id === id ? updatedMeta : p))
+    localStorage.setItem(STORAGE_INDEX, JSON.stringify(updatedProjects))
+    set({ projects: updatedProjects })
+    const data = readProjectData(id)
+    if (data) writeProjectData({ ...data, meta: updatedMeta })
+    if (meta.storage === 'cloud') {
+      fetch(`/api/projects/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(updates),
+      }).catch(() => {})
+    }
   },
 
   deleteProject: (id) => {

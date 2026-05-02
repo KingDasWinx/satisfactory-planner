@@ -1,15 +1,28 @@
 services:
 
-  # ── Next.js app ───────────────────────────────────────────────
-  # O banco de dados é gerenciado separadamente pelo Dokploy.
-  # Configure DATABASE_URL nas variáveis de ambiente do serviço
-  # apontando para o Postgres interno do Dokploy.
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-satisplanner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-satisplanner}
+      POSTGRES_DB: ${POSTGRES_DB:-satisplanner}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    depends_on:
+      - db
     ports:
       - "${APP_PORT:-3000}:3000"
     env_file:
       - .env
+
+volumes:
+  db_data:

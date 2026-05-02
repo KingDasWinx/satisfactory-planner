@@ -61,8 +61,11 @@ export function useConnectionHandler({ nodes, edges, rfInstance, onConnect, open
       pendingDrag.current = null
       if (!drag) return
 
-      const clientX = 'clientX' in event ? event.clientX : (event as TouchEvent).changedTouches[0].clientX
-      const clientY = 'clientY' in event ? event.clientY : (event as TouchEvent).changedTouches[0].clientY
+      const touch = 'changedTouches' in event ? (event as TouchEvent).changedTouches[0] : null
+      // changedTouches can be empty on certain browsers/devices — bail out if position is unavailable
+      if (!('clientX' in event) && !touch) return
+      const clientX = 'clientX' in event ? (event as MouseEvent).clientX : touch!.clientX
+      const clientY = 'clientY' in event ? (event as MouseEvent).clientY : touch!.clientY
 
       const dropFlowPosition = rfInstance.current
         ? rfInstance.current.screenToFlowPosition({ x: clientX, y: clientY })

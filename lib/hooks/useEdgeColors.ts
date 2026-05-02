@@ -234,7 +234,7 @@ export function useEdgeColors(
                 if (ratio < worstRatio) worstRatio = ratio
               }
             }
-            demand = worstRatio < 1 ? supplyThisEdge / worstRatio : supplyThisEdge
+            demand = (worstRatio > 0 && worstRatio < 1) ? supplyThisEdge / worstRatio : supplyThisEdge
           } else {
             demand = supplyThisEdge
           }
@@ -392,9 +392,6 @@ export function useEdgeColors(
       const color = edgeSufficiencyColor(flow, demand)
       const labelText = `${fmt(flow)}/m`
       const strokeWidth = edge.selected ? 4 : 2
-      // Debug: edge label pipeline
-      // eslint-disable-next-line no-console
-      console.debug('[useEdgeColors][edge]', { id: edge.id, source: edge.source, sourceHandle: edge.sourceHandle, target: edge.target, targetHandle: edge.targetHandle, flow, demand, labelText })
       return {
         ...edge,
         type: 'flowEdge',

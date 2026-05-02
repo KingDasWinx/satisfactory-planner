@@ -15,22 +15,6 @@ export function FlowEdge(props: EdgeProps) {
   const iconSrc = part ? partNameToIconPath(part) : null
   const labelText = (props.data as { labelText?: string | null } | undefined)?.labelText ?? null
   const [hideIcon, setHideIcon] = useState(false)
-  const debugEdgeLabels = true
-
-  if (debugEdgeLabels) {
-    // eslint-disable-next-line no-console
-    console.debug('[FlowEdge]', {
-      edgeId: props.id,
-      source: props.source,
-      sourceHandleId: props.sourceHandleId,
-      target: props.target,
-      targetHandleId: props.targetHandleId,
-      labelText,
-      part,
-      iconSrc,
-      hideIcon,
-    })
-  }
 
   return (
     <>
@@ -50,11 +34,7 @@ export function FlowEdge(props: EdgeProps) {
                 alt={part ?? ''}
                 className="mb-1 h-7 w-7 drop-shadow"
                 draggable={false}
-                onError={(e) => {
-                  // eslint-disable-next-line no-console
-                  console.error('[FlowEdge][iconError]', { edgeId: props.id, part, iconSrc }, e)
-                  setHideIcon(true)
-                }}
+                onError={() => setHideIcon(true)}
               />
             )}
             {labelText && (

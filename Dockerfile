@@ -46,10 +46,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/public          ./public
 # Prisma schema (needed by `prisma migrate deploy`)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-# Prisma CLI + generated client (kept minimal)
-COPY --from=builder /app/node_modules/.bin/prisma        ./node_modules/.bin/prisma
-COPY --from=builder /app/node_modules/prisma             ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma            ./node_modules/@prisma
+# Prisma CLI + WASM + generated client para rodar migrations
+COPY --from=builder /app/node_modules/.bin      ./node_modules/.bin
+COPY --from=builder /app/node_modules/prisma    ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma   ./node_modules/@prisma
 
 USER nextjs
 

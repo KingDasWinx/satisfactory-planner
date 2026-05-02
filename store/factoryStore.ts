@@ -691,9 +691,10 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
     const targetMachinesForMagic = Math.max(1, target.data.nMachines || 1)
     for (let i = 0; i < targetRecipe.inputs.length; i++) {
       const part = targetRecipe.inputs[i]!.part
-      const need = target.data.effectiveRates?.inputs?.[i] ?? target.data.incomingSupply?.[i] ?? 0
-      const fallback = (ppmForIn(targetRecipe, part) * targetMachinesForMagic * target.data.clockSpeed)
-      const required = need > 0 ? need : fallback
+      // Sempre usar a capacidade configurada (nMachines × clockSpeed), não a taxa efetiva throttled.
+      // effectiveRates.inputs[i] reflete o supply atual limitado pelo upstream existente —
+      // usar esse valor causaria geração de cadeia undersized quando há conexão parcial.
+      const required = ppmForIn(targetRecipe, part) * targetMachinesForMagic * target.data.clockSpeed
       if (required <= 0) continue
       addDemand(part, { nodeId: target.id, targetHandle: `in-${i}`, pos: target.position, requiredPerMin: required }, 0)
     }

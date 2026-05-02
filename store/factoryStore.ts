@@ -65,6 +65,7 @@ type FactoryStore = {
     chosenByPart: Record<string, ParsedRecipe>
   }) => void
 
+  rescaleUpstream: (nodeId: string, newN: number) => void
   addRecipeNode: (recipe: ParsedRecipe, machine: Machine, flowPosition: XYPosition) => string
   addSplitterNode: (flowPosition: XYPosition) => string
   addMergerNode: (flowPosition: XYPosition) => string
@@ -379,91 +380,31 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       return recipe.machine === 'Miner' && recipe.batchTime === 60 && (out?.amount ?? 0) === 1
     }
 
-    // Layout: zig-zag positions per depth + collision avoidance (variable node heights).
-    const depthCounters = new Map<number, number>()
-    function zigzag(i: number): number {
-      if (i === 0) return 0
-      const k = Math.ceil(i / 2)
-      return i % 2 === 1 ? k : -k
-    }
     const ROOT_X = target.position.x
     const ROOT_Y = target.position.y
-    const COL_GAP = 420
-    const ROW_GAP = 140
+    const COL_GAP   = 560  // horizontal distance between production columns
+    const NODE_W    = 260  // machine node approximate width  (min-w-[240px] + typical content)
+    const SMALL_W   = 176  // splitter / merger width         (w-44 = 176px)
+    const EDGE_GAP  = 28   // minimum gap between node edges
+    const MACHINE_H = 220  // estimated height of a machine node (for Y-gap calc)
+    const SMALL_H   = 136  // estimated height of splitter / merger (h-9 header + 3×h-8 rows = 132px)
+    const NODE_GAP  = 32   // minimum vertical gap between nodes in the same column
 
-    type PlacedRect = { xKey: number; y: number; h: number }
-    const placedByX = new Map<number, PlacedRect[]>()
-    function xKeyFor(x: number): number {
-      // snap to grid-ish keys to group nodes that share a column
-      return Math.round(x / 20) * 20
-    }
-    function overlaps(y: number, h: number, otherY: number, otherH: number): boolean {
-      const top = y - h / 2
-      const bot = y + h / 2
-      const oTop = otherY - otherH / 2
-      const oBot = otherY + otherH / 2
-      return top < oBot && bot > oTop
-    }
-    function placeAvoidingOverlap(pos: { x: number; y: number }, h: number): { x: number; y: number } {
-      const key = xKeyFor(pos.x)
-      const list = placedByX.get(key) ?? []
-      let y = pos.y
-      let safety = 0
-      while (safety < 200) {
-        safety++
-        const hit = list.find(r => overlaps(y, h, r.y, r.h))
-        if (!hit) break
-        // push down below the collided rect with a small gap
-        y = hit.y + hit.h / 2 + h / 2 + 24
+    // colPos: place machine node at column col (1 = adjacent to target, 2 = one further, …).
+    // Nodes in the same column are stacked top-to-bottom; Y is later corrected by settleY.
+    const colCounters = new Map<number, number>()
+    function colPos(col: number): { x: number; y: number } {
+      const idx = colCounters.get(col) ?? 0
+      colCounters.set(col, idx + 1)
+      return {
+        x: ROOT_X - col * COL_GAP,
+        y: ROOT_Y + idx * (MACHINE_H + NODE_GAP),
       }
-      list.push({ xKey: key, y, h })
-      placedByX.set(key, list)
-      return { x: pos.x, y }
-    }
-    function estimateMachineHeight(recipe: ParsedRecipe): number {
-      // Align with lib/utils/nodeGeometry.ts, but pessimistic about dynamic sections:
-      // - Utilização may appear when there are inputs (once incomingSupply exists)
-      // - Sobra may appear when there are outputs (once outgoingDemand exists)
-      const base = estimateNodeSize({
-        id: 'tmp',
-        type: 'machineNode',
-        position: { x: 0, y: 0 },
-        data: {
-          machine: { name: 'tmp', averagePower: 0 } as unknown as Machine,
-          recipe,
-          availableRecipes: [recipe],
-          nMachines: 1,
-          clockSpeed: 1,
-          // incomingSupply/outgoingDemand intentionally omitted (unknown at layout time)
-        },
-      } as MachineNode).h
-
-      const UTIL_BAR_H = 32
-      const LEFTOVER_BLOCK_H = 24
-      const hasInputs = (recipe.inputs?.length ?? 0) > 0
-      const hasOutputs = (recipe.outputs?.length ?? 0) > 0
-
-      return base + (hasInputs ? UTIL_BAR_H : 0) + (hasOutputs ? LEFTOVER_BLOCK_H : 0)
-    }
-    function estimateSmallNodeHeight(): number {
-      // Use the same estimator as collision system (deterministic).
-      return estimateNodeSize({
-        id: 'tmp',
-        type: 'splitterNode',
-        position: { x: 0, y: 0 },
-        data: {},
-      } as SplitterNode).h
     }
 
-    function nextPos(depth: number): { x: number; y: number } {
-      const idx = depthCounters.get(depth) ?? 0
-      depthCounters.set(depth, idx + 1)
-      const pos = {
-        x: ROOT_X - (depth + 1) * COL_GAP,
-        y: ROOT_Y + zigzag(idx) * ROW_GAP,
-      }
-      // Machine heights vary; we adjust later per-node with placeAvoidingOverlap.
-      return pos
+    // simplePos: lightweight placement for splitters / mergers (Y settled later).
+    function simplePos(x: number, y: number): { x: number; y: number } {
+      return { x, y }
     }
 
     const newNodes: FactoryNode[] = []
@@ -484,7 +425,6 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       depth: number
     }
     const demandsByPart = new Map<string, PartDemand>()
-    const resolvedParts = new Set<string>()
 
     type ProducerEndpoint = { nodeId: string; outHandle: string; pos: { x: number; y: number } }
     const supplyTrunkByPart = new Map<string, ProducerEndpoint>()
@@ -523,8 +463,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
           }
           const mergerId = uid('merger')
           const avgY = chunk.reduce((s, c) => s + c.pos.y, 0) / chunk.length
-          const rawPos = { x: targetPos.x - 200 - level * 220, y: avgY }
-          const pos = placeAvoidingOverlap(rawPos, estimateSmallNodeHeight())
+          const pos = simplePos(targetPos.x - SMALL_W - EDGE_GAP - level * (SMALL_W + EDGE_GAP), avgY)
           newNodes.push({ id: mergerId, type: 'mergerNode', position: pos, data: {} } as MergerNode)
           chunk.forEach((c, idx) => {
             newEdges.push({
@@ -574,8 +513,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
           }
           const mergerId = uid('merger')
           const avgY = chunk.reduce((s, c) => s + c.pos.y, 0) / chunk.length
-          const rawPos = { x: nearPos.x + 240 + level * 220, y: avgY }
-          const pos = placeAvoidingOverlap(rawPos, estimateSmallNodeHeight())
+          const pos = simplePos(nearPos.x + NODE_W + EDGE_GAP + level * (SMALL_W + EDGE_GAP), avgY)
           newNodes.push({ id: mergerId, type: 'mergerNode', position: pos, data: {} } as MergerNode)
           chunk.forEach((c, idx) => {
             newEdges.push({
@@ -615,11 +553,13 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
         return
       }
 
-      // Root splitter between source and average target Y.
+      // Root splitter: place just after the source node's right edge (NODE_W + EDGE_GAP).
+      // Using a fraction of COL_GAP would place the splitter INSIDE the source node because
+      // positions are top-left corners and machine nodes are ~260 px wide.
       const avgY = targets.reduce((s, t) => s + t.pos.y, 0) / targets.length
+      const splitterX = source.pos.x + NODE_W + EDGE_GAP
       const rootId = uid('splitter')
-      const rawRootPos = { x: source.pos.x + 200, y: avgY }
-      const rootPos = placeAvoidingOverlap(rawRootPos, estimateSmallNodeHeight())
+      const rootPos = simplePos(splitterX, avgY)
       newNodes.push({ id: rootId, type: 'splitterNode', position: rootPos, data: {} } as SplitterNode)
       newEdges.push({
         id: `e-${source.nodeId}-${rootId}-${source.outHandle}-in-0`,
@@ -643,8 +583,7 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
         const port = ports.shift()
         if (!port) break
         const splitId = uid('splitter')
-        const rawSplitPos = { x: port.pos.x + 200, y: port.pos.y }
-        const splitPos = placeAvoidingOverlap(rawSplitPos, estimateSmallNodeHeight())
+        const splitPos = simplePos(port.pos.x + SMALL_W + EDGE_GAP, port.pos.y)
         newNodes.push({ id: splitId, type: 'splitterNode', position: splitPos, data: {} } as SplitterNode)
         newEdges.push({
           id: `e-${port.nodeId}-${splitId}-${port.outHandle}-in-0`,
@@ -686,46 +625,164 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       }
     }
 
-    // Seed demands from target recipe inputs.
     // Magic always plans for at least 1× of the target machine.
-    const targetMachinesForMagic = Math.max(1, target.data.nMachines || 1)
-    for (let i = 0; i < targetRecipe.inputs.length; i++) {
-      const part = targetRecipe.inputs[i]!.part
-      // Sempre usar a capacidade configurada (nMachines × clockSpeed), não a taxa efetiva throttled.
-      // effectiveRates.inputs[i] reflete o supply atual limitado pelo upstream existente —
-      // usar esse valor causaria geração de cadeia undersized quando há conexão parcial.
-      const required = ppmForIn(targetRecipe, part) * targetMachinesForMagic * target.data.clockSpeed
-      if (required <= 0) continue
-      addDemand(part, { nodeId: target.id, targetHandle: `in-${i}`, pos: target.position, requiredPerMin: required }, 0)
-    }
+    let targetMachinesForMagic = Math.max(1, target.data.nMachines || 1)
+    const targetClockSpeed = target.data.clockSpeed ?? 1
 
-    function ensureSupplyForPart(part: string) {
-      if (supplyTrunkByPart.has(part)) return
-      const demand = demandsByPart.get(part)
-      if (!demand || demand.totalRequired <= 0) return
+    // Phase 1: walk the full demand tree BEFORE creating any node, accumulating
+    // totalRequired for each intermediate part. This avoids the ordering bug where
+    // Iron Rod was processed with demand=20, sized at 1.33× Constructor, then Screw
+    // added 25 more iron-rod demand — but Iron Rod was already "resolved" and never
+    // resized. With this walk, Iron Rod correctly accumulates 20+25=45 before any
+    // node is created, so the Constructor gets the right 3× size.
+    //
+    // On first visit: walk all inputs with the full machines-equivalent demand.
+    // On re-visits: propagate only the delta upstream (avoids double-counting).
+    const phase1Required = new Map<string, number>()
+    const phase1Visited = new Set<string>()
+
+    function walkPhase1(part: string, neededPerMin: number) {
+      const prevTotal = phase1Required.get(part) ?? 0
+      phase1Required.set(part, prevTotal + neededPerMin)
 
       const chosen = chosenByPart[part] ?? (producersByPart.get(part)?.[0] ?? null)
       if (!chosen) return
 
+      const outPpm = ppmForOut(chosen, part)
+      if (outPpm <= 0) return
+
+      if (phase1Visited.has(part)) {
+        // Already walked: propagate only the delta to avoid double-counting.
+        const deltaEq = neededPerMin / outPpm
+        for (const inp of chosen.inputs) {
+          const inNeeded = deltaEq * ppmForIn(chosen, inp.part)
+          if (inNeeded > 0) walkPhase1(inp.part, inNeeded)
+        }
+      } else {
+        phase1Visited.add(part)
+        const machinesEq = (prevTotal + neededPerMin) / outPpm
+        for (const inp of chosen.inputs) {
+          const inNeeded = machinesEq * ppmForIn(chosen, inp.part)
+          if (inNeeded > 0) walkPhase1(inp.part, inNeeded)
+        }
+      }
+    }
+
+    function runPhase1(t: number) {
+      phase1Required.clear()
+      phase1Visited.clear()
+      for (const inp of targetRecipe.inputs) {
+        const needed = ppmForIn(targetRecipe, inp.part) * t * targetClockSpeed
+        if (needed > 0) walkPhase1(inp.part, needed)
+      }
+    }
+
+    runPhase1(targetMachinesForMagic)
+
+    // Auto-scale the target: some raw-resource machines (e.g. Miners) need less than 1×
+    // for the user's requested target count, so they get floored to 1×. This creates
+    // excess capacity — the target machine could run at a higher count and still be fully
+    // supplied by exactly 1× of each floored machine.
+    //
+    // Formula: minRaw = min(phase1Required[part] / outPpm) for all parts that would be
+    // floored (raw < 1). Scaling target by 1/minRaw makes the most-constrained floored
+    // machine land exactly at 1×, eliminating ALL flooring in one step (proof: every
+    // other floored part has raw > minRaw, so after scaling its raw exceeds 1 too).
+    let minRaw = Infinity
+    for (const [part, required] of phase1Required) {
+      const chosen = chosenByPart[part] ?? (producersByPart.get(part)?.[0] ?? null)
+      if (!chosen) continue
+      const outPpm = ppmForOut(chosen, part)
+      if (outPpm <= 0) continue
+      const raw = required / outPpm
+      if (raw > 0 && raw < 1) minRaw = Math.min(minRaw, raw)
+    }
+
+    if (minRaw < 1) {
+      targetMachinesForMagic = Math.round((targetMachinesForMagic / minRaw) * 100) / 100
+      runPhase1(targetMachinesForMagic)
+    }
+
+    // Critical-column assignment (ASAP scheduling / longest path to target).
+    //
+    // BFS depth gives the SHORTEST path, which causes a machine that feeds two consumers
+    // (e.g. Iron Rod Constructor feeds Assembler directly AND via Screw Constructor) to end
+    // up in the same column as the closer consumer. With longest-path we place it to the
+    // left of ALL its consumers, so no edge ever goes right-to-left.
+    //
+    //  Example — Rotor chain:
+    //    BFS depth: IronRodCtor=1, ScrewCtor=1 → same column  (wrong: IronRod feeds ScrewCtor)
+    //    Longest path: IronRodCtor=2, ScrewCtor=1              (correct: IronRodCtor is upstream)
+    const partConsumers = new Map<string, Set<string>>()
+    for (const part of phase1Required.keys()) {
+      const chosen = chosenByPart[part] ?? (producersByPart.get(part)?.[0] ?? null)
+      if (!chosen) continue
+      for (const inp of chosen.inputs) {
+        if (!phase1Required.has(inp.part)) continue
+        const s = partConsumers.get(inp.part) ?? new Set<string>()
+        s.add(part)
+        partConsumers.set(inp.part, s)
+      }
+    }
+    for (const inp of targetRecipe.inputs) {
+      if (!phase1Required.has(inp.part)) continue
+      const s = partConsumers.get(inp.part) ?? new Set<string>()
+      s.add('__target__')
+      partConsumers.set(inp.part, s)
+    }
+    const partLayer = new Map<string, number>()
+    for (const part of phase1Required.keys()) partLayer.set(part, 1)
+    for (let iter = 0; iter < phase1Required.size + 2; iter++) {
+      let changed = false
+      for (const [part] of phase1Required) {
+        for (const consumer of (partConsumers.get(part) ?? new Set<string>())) {
+          const cl = consumer === '__target__' ? 0 : (partLayer.get(consumer) ?? 0)
+          const nl = cl + 1
+          if (nl > (partLayer.get(part) ?? 0)) { partLayer.set(part, nl); changed = true }
+        }
+      }
+      if (!changed) break
+    }
+
+    // Phase 2: seed consumer endpoints from the target node's inputs, then BFS upward.
+    // Producers are sized using phase1Required (correctly accumulated totals from Phase 1).
+    for (let i = 0; i < targetRecipe.inputs.length; i++) {
+      const part = targetRecipe.inputs[i]!.part
+      const required = ppmForIn(targetRecipe, part) * targetMachinesForMagic * targetClockSpeed
+      if (required <= 0) continue
+      addDemand(part, { nodeId: target.id, targetHandle: `in-${i}`, pos: target.position, requiredPerMin: required }, 0)
+    }
+
+    const processedProducers = new Set<string>()
+    const bfsQueue: { part: string; depth: number }[] = targetRecipe.inputs.map((inp) => ({
+      part: inp.part,
+      depth: 0,
+    }))
+
+    while (bfsQueue.length > 0) {
+      const item = bfsQueue.shift()!
+      if (processedProducers.has(item.part)) continue
+      processedProducers.add(item.part)
+
+      const totalPpm = phase1Required.get(item.part) ?? 0
+      if (totalPpm <= 0) continue
+
+      const chosen = chosenByPart[item.part] ?? (producersByPart.get(item.part)?.[0] ?? null)
+      if (!chosen) continue
+
       const machine = resolveMachine(chosen.machine)
-      if (!machine) return
+      if (!machine) continue
 
-      const outPpmPerMachine = ppmForOut(chosen, part)
-      if (outPpmPerMachine <= 0) return
+      const outPpm = ppmForOut(chosen, item.part)
+      if (outPpm <= 0) continue
 
-      // Create only ONE producer node for this part, adjusting its nMachines.
-      // Keep internal consistency: the same value is used for node config and for input demands.
-      const desiredMachinesRaw = Math.max(1, demand.totalRequired / outPpmPerMachine)
-      const machinesValue = Math.round(desiredMachinesRaw * 100) / 100
-      const outIdx = Math.max(0, chosen.outputs.findIndex((o) => o.part === part))
-
-      const avgY = demand.consumers.reduce((s, c) => s + c.pos.y, 0) / demand.consumers.length
-      const baseX = ROOT_X - (demand.depth + 1) * COL_GAP
+      // Use the correctly accumulated total from Phase 1.
+      const machinesValue = Math.round(Math.max(1, totalPpm / outPpm) * 100) / 100
+      const outIdx = Math.max(0, chosen.outputs.findIndex((o) => o.part === item.part))
 
       const id = uid('machine')
-      // Use a global slot per column (depth) to avoid overlap across different parts.
-      const rawPos = nextPos(demand.depth)
-      const pos = placeAvoidingOverlap(rawPos, estimateMachineHeight(chosen))
+      const col = partLayer.get(item.part) ?? 1
+      const pos = colPos(col)
       newNodes.push({
         id,
         type: 'machineNode',
@@ -738,12 +795,12 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
           clockSpeed: 1,
           createdByMagic: true,
           magicAutoApplied: false,
+          autoLocked: true,
         },
       } as MachineNode)
-      const trunk: ProducerEndpoint = { nodeId: id, outHandle: `out-${outIdx}`, pos }
-      supplyTrunkByPart.set(part, trunk)
 
-      // Producer demands for its inputs scale with nMachines.
+      supplyTrunkByPart.set(item.part, { nodeId: id, outHandle: `out-${outIdx}`, pos })
+
       for (let inIdx = 0; inIdx < chosen.inputs.length; inIdx++) {
         const inPart = chosen.inputs[inIdx]!.part
         const inNeedPerMachine = ppmForIn(chosen, inPart)
@@ -751,19 +808,10 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
         addDemand(
           inPart,
           { nodeId: id, targetHandle: `in-${inIdx}`, pos, requiredPerMin: inNeedPerMachine * machinesValue },
-          demand.depth + 1,
+          item.depth + 1,
         )
+        bfsQueue.push({ part: inPart, depth: item.depth + 1 })
       }
-    }
-
-    // Resolve parts in BFS-ish manner: keep processing until no new parts appear.
-    let safety = 0
-    while (safety < 2000) {
-      safety++
-      const next = [...demandsByPart.keys()].find((p) => !resolvedParts.has(p))
-      if (!next) break
-      resolvedParts.add(next)
-      ensureSupplyForPart(next)
     }
 
     // Connect trunks to all consumers (splitter cascades).
@@ -773,23 +821,210 @@ export const useFactoryStore = create<FactoryStore>((set, get) => ({
       connectOneToMany(trunk, demand.consumers, demand.depth)
     }
 
+    // Y-settlement pass: center each column's nodes on the average Y of their
+    // right-side neighbors, then enforce minimum vertical gaps within each column.
+    // Process right-to-left so each column's position is already settled when
+    // used as a reference for the column to its left.
+    ;(function settleYPositions() {
+      // Outgoing edge map (source → direct targets)
+      const toRight = new Map<string, string[]>()
+      for (const e of newEdges) {
+        const arr = toRight.get(e.source) ?? []
+        if (!arr.includes(e.target)) arr.push(e.target)
+        toRight.set(e.source, arr)
+      }
+
+      // Working position map — includes target as a fixed Y anchor
+      const pos = new Map<string, { x: number; y: number }>()
+      pos.set(target.id, target.position)
+      for (const n of newNodes) pos.set(n.id, { ...n.position })
+
+      const getH = (id: string) => {
+        const n = newNodes.find(nn => nn.id === id)
+        return n?.type === 'machineNode' ? MACHINE_H : SMALL_H
+      }
+
+      // Group nodes by X column (snap to nearest 10 px to merge floating-point twins)
+      const byX = new Map<number, string[]>()
+      for (const n of newNodes) {
+        const x = Math.round(n.position.x / 10) * 10
+        const arr = byX.get(x) ?? []
+        arr.push(n.id)
+        byX.set(x, arr)
+      }
+
+      // Right-to-left column processing
+      for (const colX of [...byX.keys()].sort((a, b) => b - a)) {
+        const ids = byX.get(colX)!
+
+        // Compute ideal Y for each node = average Y of its immediate downstream neighbors
+        const entries = ids.map(id => {
+          const neighbors = toRight.get(id) ?? []
+          const ys = neighbors.map(rid => pos.get(rid)?.y ?? ROOT_Y)
+          const idealY = ys.length > 0 ? ys.reduce((a, b) => a + b, 0) / ys.length : ROOT_Y
+          return { id, idealY }
+        })
+
+        entries.sort((a, b) => a.idealY - b.idealY)
+
+        // Average ideal Y — used to re-center after gap expansion
+        const avgIdeal = entries.reduce((s, e) => s + e.idealY, 0) / entries.length
+
+        // Apply minimum vertical gaps (push nodes apart from top to bottom)
+        const ys = entries.map(e => e.idealY)
+        for (let i = 1; i < ys.length; i++) {
+          const gap = (getH(entries[i - 1]!.id) + getH(entries[i]!.id)) / 2 + NODE_GAP
+          if (ys[i]! < ys[i - 1]! + gap) ys[i] = ys[i - 1]! + gap
+        }
+
+        // Re-center the column around avgIdeal (gap expansion drifts the cluster downward)
+        if (ys.length > 0) {
+          const gapCenter = ys.length > 1 ? (ys[0]! + ys[ys.length - 1]!) / 2 : ys[0]!
+          const shift = avgIdeal - gapCenter
+          for (let i = 0; i < ys.length; i++) ys[i]! && (ys[i] = ys[i]! + shift)
+        }
+
+        // Write final Y back
+        for (let i = 0; i < entries.length; i++) {
+          const n = newNodes.find(nn => nn.id === entries[i]!.id)
+          if (n) n.position = { x: n.position.x, y: ys[i]! }
+          pos.set(entries[i]!.id, { x: colX, y: ys[i]! })
+        }
+      }
+    })()
+
     if (newNodes.length === 0 && newEdges.length === 0) return
 
     get()._pushHistory()
     const updatedExistingNodes = nodes.map((n) =>
       n.id === targetNodeId && n.type === 'machineNode'
-        ? ({ ...n, data: { ...n.data, createdByMagic: true, magicAutoApplied: false } } as FactoryNode)
+        ? ({ ...n, data: { ...n.data, nMachines: targetMachinesForMagic, createdByMagic: true, magicAutoApplied: false, autoLocked: true } } as FactoryNode)
         : n
     )
 
     const nextNodes = [...updatedExistingNodes, ...newNodes]
-    const settledNodes = settleNodesNoOverlap(nextNodes, { iterations: 60 })
+    const settledNodes = settleNodesNoOverlap(nextNodes, { iterations: 30 })
 
     set({
       nodes: settledNodes,
       edges: [...edges, ...newEdges],
       menu: null,
     })
+  },
+
+  rescaleUpstream: (nodeId, newN) => {
+    const { nodes, edges } = get()
+    const target = nodes.find((n) => n.id === nodeId)
+    if (!target || target.type !== 'machineNode' || !target.data.recipe) return
+
+    // Step 1: BFS backward — collect all upstream-reachable node IDs.
+    const upstreamIds = new Set<string>()
+    const bfsQ1 = [nodeId]
+    const bfsV1 = new Set<string>([nodeId])
+    while (bfsQ1.length > 0) {
+      const cur = bfsQ1.shift()!
+      for (const e of edges) {
+        if (e.target === cur && !bfsV1.has(e.source)) {
+          bfsV1.add(e.source)
+          upstreamIds.add(e.source)
+          bfsQ1.push(e.source)
+        }
+      }
+    }
+
+    // Step 2: Collect upstream machine nodes in BFS order (downstream → upstream).
+    // Processing in this order guarantees that when we compute the demand on machine U,
+    // all machines downstream of U already have their updated nMachines in workingN.
+    const processOrder: string[] = []
+    const bfsQ2 = [nodeId]
+    const bfsV2 = new Set<string>([nodeId])
+    while (bfsQ2.length > 0) {
+      const cur = bfsQ2.shift()!
+      for (const e of edges) {
+        if (e.target === cur && upstreamIds.has(e.source) && !bfsV2.has(e.source)) {
+          bfsV2.add(e.source)
+          processOrder.push(e.source)
+          bfsQ2.push(e.source)
+        }
+      }
+    }
+
+    // Step 3: Working nMachines map. Initialised from current values; target is set to newN.
+    const workingN = new Map<string, number>()
+    for (const n of nodes) {
+      if (n.type === 'machineNode') workingN.set(n.id, n.data.nMachines)
+    }
+    workingN.set(nodeId, newN)
+
+    // Compute demand that a single edge delivers to its consumer.
+    // Traverses through Splitter / Merger nodes so every demand reaches a machine.
+    function demandFromEdge(e: Edge, visited = new Set<string>()): number {
+      const tgt = nodes.find((n) => n.id === e.target)
+      if (!tgt) return 0
+      if (tgt.type === 'machineNode' && tgt.data.recipe) {
+        const inIdx = parseInt((e.targetHandle ?? 'in-0').replace('in-', ''))
+        const inp = tgt.data.recipe.inputs[inIdx]
+        if (!inp) return 0
+        const ppmPerMachine = (inp.amount / tgt.data.recipe.batchTime) * 60
+        return ppmPerMachine * (workingN.get(tgt.id) ?? tgt.data.nMachines) * (tgt.data.clockSpeed ?? 1)
+      }
+      if ((tgt.type === 'splitterNode' || tgt.type === 'mergerNode') && !visited.has(tgt.id)) {
+        visited.add(tgt.id)
+        return edges
+          .filter((oe) => oe.source === tgt.id)
+          .reduce((s, oe) => s + demandFromEdge(oe, visited), 0)
+      }
+      return 0
+    }
+
+    // Step 4: For each upstream machine (downstream → upstream order), compute the total
+    // demand placed on each of its output slots from ALL consumers (not just our chain).
+    // This naturally handles both scale-up and scale-down: downstream machines that have
+    // already been updated in workingN propagate their new demand upward, while independent
+    // machines outside the chain preserve their original demand.
+    for (const upId of processOrder) {
+      const upNode = nodes.find((n) => n.id === upId)
+      if (!upNode || upNode.type !== 'machineNode' || !upNode.data.recipe) continue
+
+      // Group outgoing edges by output slot.
+      const slotDemand = new Map<number, number>()
+      for (const e of edges) {
+        if (e.source !== upId) continue
+        const slotIdx = parseInt((e.sourceHandle ?? 'out-0').replace('out-', ''))
+        slotDemand.set(slotIdx, (slotDemand.get(slotIdx) ?? 0) + demandFromEdge(e))
+      }
+      if (slotDemand.size === 0) continue
+
+      // Required nMachines = max across all output slots (most-constrained output wins).
+      let maxRequiredN = 1
+      for (const [slotIdx, demand] of slotDemand) {
+        const out = upNode.data.recipe.outputs[slotIdx]
+        if (!out) continue
+        let outPpm = (out.amount / upNode.data.recipe.batchTime) * 60
+        if (upNode.data.recipe.machine === 'Miner' && upNode.data.recipe.batchTime === 60 && out.amount === 1) outPpm = 60
+        if (outPpm > 0) maxRequiredN = Math.max(maxRequiredN, demand / outPpm)
+      }
+
+      workingN.set(upId, Math.round(Math.max(1, maxRequiredN) * 100) / 100)
+    }
+
+    // Step 5: Apply changes — only touch the target and its upstream machines.
+    // Mark every modified node as autoLocked so useFlowSync doesn't immediately revert
+    // the values back to the autoNMachines-computed maximum (which is based on upstream
+    // supply capacity and would always push machines up to the highest possible count).
+    let changed = false
+    const updatedNodes = nodes.map((n) => {
+      if (n.id !== nodeId && !upstreamIds.has(n.id)) return n
+      if (n.type !== 'machineNode') return n
+      const next = workingN.get(n.id)
+      if (next === undefined || Math.abs(next - n.data.nMachines) < 0.005) return n
+      changed = true
+      return { ...n, data: { ...n.data, nMachines: next, autoLocked: true } }
+    })
+
+    if (!changed) return
+    get()._pushHistory()
+    set({ nodes: updatedNodes })
   },
 
   addRecipeNode: (recipe, machine, flowPosition) => {

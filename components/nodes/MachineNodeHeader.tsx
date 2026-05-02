@@ -12,9 +12,11 @@ interface MachineNodeHeaderProps {
 }
 
 export function MachineNodeHeader({ id, data }: MachineNodeHeaderProps) {
-  const { machine, nMachines, autoNMachines, clockSpeed } = data
+  const { machine, nMachines, autoNMachines, clockSpeed, autoLocked } = data
   const displayMachineName = data.minerVariant ?? machine.name
-  const displayMachines = autoNMachines ?? nMachines
+  // When autoLocked the user has explicitly set nMachines; show that value.
+  // For unlocked nodes, autoNMachines reflects the auto-computed supply-limited count.
+  const displayMachines = (!autoLocked && autoNMachines !== undefined) ? autoNMachines : nMachines
   const [configAnchor, setConfigAnchor] = useState<DOMRect | null>(null)
   const configBtnRef = useRef<HTMLButtonElement>(null)
   const [hideMachineIcon, setHideMachineIcon] = useState(false)
@@ -40,7 +42,7 @@ export function MachineNodeHeader({ id, data }: MachineNodeHeaderProps) {
       )}
       <span className="text-sm font-semibold text-amber-200 truncate">
         {displayMachines !== 1 && (
-          <span className="text-amber-400 mr-1" title={autoNMachines !== undefined ? `Máquinas efetivas (por gargalo): ${displayMachines}×` : `Máquinas: ${displayMachines}×`}>
+          <span className="text-amber-400 mr-1" title={!autoLocked && autoNMachines !== undefined ? `Máquinas efetivas (por gargalo): ${displayMachines}×` : `Máquinas: ${displayMachines}×`}>
             {displayMachines}×
           </span>
         )}

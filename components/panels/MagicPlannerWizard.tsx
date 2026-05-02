@@ -49,9 +49,13 @@ export function MagicPlannerWizard({ recipes, machines }: MagicPlannerWizardProp
     const out = recipe.outputs[0]
     if (!out) return null
 
-    // Target rate: use effective output if available, else base theoretical from recipe
+    // Target rate: use effective output only when > 0 (machine running with supply).
+    // effectiveRates.outputs[0] = 0 means no upstream supply yet, so fall back to the
+    // theoretical rate. Using `?? 0` would incorrectly pass 0 to planMagicChain, causing
+    // rootMachinesEq = 0 and no parts to be planned.
     const effOut = targetNode.data.effectiveRates?.outputs?.[0]
-    const targetPerMin = effOut ?? ((out.amount / recipe.batchTime) * 60 * targetNode.data.nMachines * targetNode.data.clockSpeed)
+    const theoretical = (out.amount / recipe.batchTime) * 60 * targetNode.data.nMachines * targetNode.data.clockSpeed
+    const targetPerMin = (effOut != null && effOut > 0) ? effOut : theoretical
 
     return planMagicChain({
       targetRecipe: recipe,

@@ -17,9 +17,11 @@ interface MachineNodeBodyProps {
   isExtractor: boolean
 }
 
+const r1 = (n: number) => Math.round(n * 10) / 10
+
 export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtractor }: MachineNodeBodyProps) {
-  const { recipe, availableRecipes, nMachines, autoNMachines, clockSpeed, incomingSupply, incomingPotential, outgoingDemand } = data
-  const displayMachines = autoNMachines ?? nMachines
+  const { recipe, availableRecipes, nMachines, autoNMachines, clockSpeed, incomingSupply, incomingPotential, outgoingDemand, autoLocked } = data
+  const displayMachines = (!autoLocked && autoNMachines !== undefined) ? autoNMachines : nMachines
   const setRecipe = useFactoryStore((s) => s.setRecipe)
   const setNodeConfig = useFactoryStore((s) => s.setNodeConfig)
   const [recipeOpen, setRecipeOpen] = useState(false)
@@ -62,7 +64,7 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
         <span
           className="text-xs text-slate-400 shrink-0 bg-slate-800 rounded px-1.5 py-0.5"
           title={
-            autoNMachines !== undefined
+            !autoLocked && autoNMachines !== undefined
               ? `Máquinas efetivas (por gargalo): ${displayMachines} · Configurado: ${nMachines} · Clock ${Math.round(clockSpeed * 100)}%`
               : `Configuração: ${nMachines} máquina(s) · Clock ${Math.round(clockSpeed * 100)}%`
           }
@@ -101,7 +103,7 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
                   {got !== undefined ? (
                     <>
                       <span
-                        className={got >= need ? 'text-emerald-400' : 'text-red-400'}
+                        className={r1(got) >= r1(need) ? 'text-emerald-400' : 'text-red-400'}
                         title={`Recebendo ${fmt(got)}/m de ${fmt(need)}/m necessários`}
                       >
                         {fmt(got)}
@@ -146,7 +148,7 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
                       {consumed !== undefined && (
                         <>
                           <span className="text-slate-600">/</span>
-                          <span className={consumed <= prod ? 'text-emerald-400' : 'text-red-400'}>{fmt(consumed)}/m</span>
+                          <span className={r1(consumed) <= r1(prod) ? 'text-emerald-400' : 'text-red-400'}>{fmt(consumed)}/m</span>
                         </>
                       )}
                     </>
@@ -157,7 +159,7 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
                       </span>
                       <span className="text-slate-600">/</span>
                       <span
-                        className={consumed <= prod ? 'text-emerald-400' : 'text-red-400'}
+                        className={r1(consumed) <= r1(prod) ? 'text-emerald-400' : 'text-red-400'}
                         title={`Puxado pelo downstream: ${fmt(consumed)}/m`}
                       >
                         {fmt(consumed)}/m

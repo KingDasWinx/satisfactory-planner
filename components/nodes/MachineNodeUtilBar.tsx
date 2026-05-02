@@ -12,9 +12,11 @@ interface MachineNodeUtilBarProps {
 export function MachineNodeUtilBar({ inputs, rates, incomingSupply }: MachineNodeUtilBarProps) {
   if (inputs.length === 0 || !incomingSupply) return null
 
+  const r1 = (n: number) => Math.round(n * 10) / 10
+
   const efficiencies = inputs.map((_, i) => {
-    const demand = rates.inputs[i] ?? 0
-    const supply = incomingSupply[i] ?? 0
+    const demand = r1(rates.inputs[i] ?? 0)
+    const supply = r1(incomingSupply[i] ?? 0)
     if (demand === 0 || supply === 0) return null
     return Math.min(supply / demand, 1)
   }).filter((e): e is number => e !== null)

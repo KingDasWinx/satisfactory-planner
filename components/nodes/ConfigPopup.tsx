@@ -17,6 +17,7 @@ export function ConfigPopup({ id, data, anchorRect, onClose }: ConfigPopupProps)
   const { machine, recipe, availableRecipes, nMachines, autoLocked, autoNMachines, clockSpeed, minerVariant, minerCapacity } = data
   const setRecipe = useFactoryStore((s) => s.setRecipe)
   const setNodeConfig = useFactoryStore((s) => s.setNodeConfig)
+  const rescaleUpstream = useFactoryStore((s) => s.rescaleUpstream)
   const multiMachines = useMultiMachines()
 
   const multiMachine = multiMachines.find((mm) => mm.machines.some((v) => v.name === machine.name))
@@ -94,7 +95,7 @@ export function ConfigPopup({ id, data, anchorRect, onClose }: ConfigPopupProps)
               max={999}
               step={0.01}
               value={nMachines}
-              onChange={(e) => setNodeConfig(id, { nMachines: Math.max(0.01, parseFloat(e.target.value) || 1) })}
+              onChange={(e) => rescaleUpstream(id, Math.max(0.01, parseFloat(e.target.value) || 1))}
               className="w-full text-xs bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200 focus:outline-none focus:border-amber-500"
             />
           </div>

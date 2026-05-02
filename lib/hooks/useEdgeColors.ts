@@ -331,7 +331,10 @@ export function useEdgeColors(
           const ratio = demand > 0 ? supply / demand : 1
           eff = Math.min(eff, ratio)
         }
-        const next = hasAnyDemand ? Math.max(0, Math.min(eff, 1)) : 1
+        // Snap to exactly 1.0 when within 0.1% — avoids floating-point residue
+        // (e.g. supply/demand = 0.9993) from propagating into display comparisons.
+        const rawEff = hasAnyDemand ? Math.max(0, Math.min(eff, 1)) : 1
+        const next = rawEff >= 0.999 ? 1 : rawEff
         const prev = efficiencies.get(id) ?? 1
         maxDelta = Math.max(maxDelta, Math.abs(next - prev))
         efficiencies.set(id, next)
@@ -379,6 +382,13 @@ export function useEdgeColors(
         desired = Math.min(desired, available / per)
       }
       if (!hasAny || !isFinite(desired)) continue
+      // When no supply exists at all, don't override the user's configured value.
+      // desired == 0 means all potentials are zero (no upstream connected yet).
+      // Without this guard, a freshly placed machine with no connections gets
+      // autoNMachines = 0.01, which corrupts the user's setting and creates a
+      // self-reinforcing loop: tiny nMachines → tiny Splitter allocation →
+      // tiny incomingPotential → tiny autoNMachines again.
+      if (desired <= 0) continue
       // Keep a tiny >0 lower bound to avoid hitting exactly zero and breaking ratios.
       desired = Math.max(0.01, desired)
 

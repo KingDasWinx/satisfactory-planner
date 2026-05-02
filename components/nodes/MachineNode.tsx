@@ -31,8 +31,11 @@ function MachineNodeComponent({ id, data, selected }: NodeProps & { data: Machin
 
   const inputs = recipe?.inputs ?? []
   const outputs = recipe?.outputs ?? []
-  // UI-only: when autoNMachines is present, show totals scaled by the effective machine count.
-  const baseRates = calcNodeRates(data.autoNMachines ? { ...data, nMachines: data.autoNMachines } : data, multiMachines)
+  // UI-only: when autoNMachines is present AND the node is not user-locked, show totals
+  // scaled by the effective (supply-limited) count. When autoLocked, the user has
+  // explicitly set nMachines, so use that value — autoNMachines may be stale.
+  const effectiveN = !data.autoLocked && data.autoNMachines ? data.autoNMachines : data.nMachines
+  const baseRates = calcNodeRates({ ...data, nMachines: effectiveN }, multiMachines)
   const effectiveRates = data.effectiveRates ?? baseRates
 
   return (

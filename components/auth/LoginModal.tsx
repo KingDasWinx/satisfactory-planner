@@ -118,6 +118,14 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [availableProviders, setAvailableProviders] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    fetch('/api/auth/providers')
+      .then((r) => r.json())
+      .then((data: Record<string, unknown>) => setAvailableProviders(new Set(Object.keys(data))))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -242,32 +250,40 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             </div>
           </div>
 
-          {/* OAuth */}
-          <div className="px-6 grid grid-cols-2 gap-3 mb-5">
-            <button
-              type="button"
-              onClick={() => void signIn('github')}
-              className="flex items-center justify-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 hover:border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors"
-            >
-              <IconGitHub />
-              GitHub
-            </button>
-            <button
-              type="button"
-              onClick={() => void signIn('google')}
-              className="flex items-center justify-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 hover:border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors"
-            >
-              <IconGoogle />
-              Google
-            </button>
-          </div>
+          {/* OAuth — só exibe se o provedor estiver configurado */}
+          {(availableProviders.has('github') || availableProviders.has('google')) && (
+            <>
+              <div className={`px-6 mb-5 grid gap-3 ${availableProviders.has('github') && availableProviders.has('google') ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {availableProviders.has('github') && (
+                  <button
+                    type="button"
+                    onClick={() => void signIn('github')}
+                    className="flex items-center justify-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 hover:border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors"
+                  >
+                    <IconGitHub />
+                    GitHub
+                  </button>
+                )}
+                {availableProviders.has('google') && (
+                  <button
+                    type="button"
+                    onClick={() => void signIn('google')}
+                    className="flex items-center justify-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 hover:border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors"
+                  >
+                    <IconGoogle />
+                    Google
+                  </button>
+                )}
+              </div>
 
-          {/* Divisor */}
-          <div className="px-6 mb-5 flex items-center gap-3">
-            <div className="flex-1 h-px bg-slate-800" />
-            <span className="text-[11px] text-slate-600 font-medium tracking-wide uppercase">ou com e-mail</span>
-            <div className="flex-1 h-px bg-slate-800" />
-          </div>
+              {/* Divisor só aparece se há OAuth + formulário */}
+              <div className="px-6 mb-5 flex items-center gap-3">
+                <div className="flex-1 h-px bg-slate-800" />
+                <span className="text-[11px] text-slate-600 font-medium tracking-wide uppercase">ou com e-mail</span>
+                <div className="flex-1 h-px bg-slate-800" />
+              </div>
+            </>
+          )}
 
           {/* Formulário */}
           <div className="px-6 space-y-3">

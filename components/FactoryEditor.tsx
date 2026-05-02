@@ -6,6 +6,7 @@ import {
   Controls,
   MiniMap,
   type ReactFlowInstance,
+  type Edge,
 } from '@xyflow/react'
 import { useFactoryStore } from '@/store/factoryStore'
 import { useProjectStore } from '@/store/projectStore'
@@ -32,6 +33,7 @@ import { useAutoSave } from '@/lib/hooks/useAutoSave'
 import { exportCanvasToPng } from '@/lib/utils/exportCanvas'
 import type { Machine, MultiMachine, ParsedRecipe, Part } from '@/lib/types/game'
 import type { ProjectMeta } from '@/lib/types/projects'
+import type { FactoryNode } from '@/lib/types/store'
 
 const nodeTypes = {
   machineNode: MachineNode,

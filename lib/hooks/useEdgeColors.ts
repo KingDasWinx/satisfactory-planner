@@ -211,8 +211,10 @@ export function useEdgeColors(
 
         let demand: number
         if (targetNode?.type === 'splitterNode') {
-          const splitterDemand = (targetRates?.inputDemand ?? undefined) as number | undefined
-          demand = splitterDemand !== undefined && splitterDemand > 0 ? splitterDemand : supplyThisEdge
+          // O Splitter passa todo o supply recebido; a distribuição ocorre nas arestas de saída.
+          // Usar splitterInputDemand aqui limitaria a aresta ao que o downstream consome (ex: 18/60),
+          // fazendo o produtor parecer sub-utilizado.
+          demand = supplyThisEdge
         } else if (targetNode?.type === 'mergerNode') {
           demand = supplyThisEdge
         } else if (targetNode?.type === 'storageNode') {

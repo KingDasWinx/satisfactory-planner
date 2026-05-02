@@ -69,15 +69,33 @@ export function planMagicChain({
   const visited = new Set<string>()
 
   function walk(part: string, requiredPerMin: number) {
-    // Prevent infinite recursion in weird cyclic data; treat as resolved stop.
+    const preChosen = chosenByPart[part]
+
+    // Se a peça já foi resolvida (sem preChosen), apenas acumula a demanda adicional
+    // e propaga o delta para os inputs upstream. Isso corrige o caso onde a mesma
+    // peça intermediária é necessária por múltiplos consumidores (ex: Iron Rod para
+    // o Assembler E para o Screw Constructor).
+    if (resolved[part] && !preChosen) {
+      const delta = requiredPerMin
+      resolved[part]!.requiredPerMin += delta
+      const chosen = resolved[part]!.chosen
+      const outPpm = ppmForPartInRecipeOutput(chosen, part)
+      const machinesEq = outPpm > 0 ? delta / outPpm : 0
+      for (const i of chosen.inputs) {
+        const inPerMachine = inputPpmFromRecipe(chosen, i.part)
+        const need = machinesEq * inPerMachine
+        if (need > 0) walk(i.part, need)
+      }
+      return
+    }
+
+    // Previne recursão infinita apenas para novos caminhos (peça não resolvida ainda).
     const key = `${part}::${requiredPerMin.toFixed(4)}`
     if (visited.has(key)) return
     visited.add(key)
 
-    const preChosen = chosenByPart[part]
     if (preChosen) {
       resolved[part] = { chosen: preChosen, requiredPerMin }
-      // propagate inputs
       const outPpm = ppmForPartInRecipeOutput(preChosen, part)
       const machinesEq = outPpm > 0 ? requiredPerMin / outPpm : 0
       for (const i of preChosen.inputs) {

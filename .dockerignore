@@ -1,0 +1,32 @@
+# Dependências — reinstaladas no build
+node_modules
+
+# Build anterior
+.next
+
+# Secrets — nunca entram na imagem
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode
+.cursor
+.DS_Store
+Thumbs.db
+
+# Testes e docs
+tests
+docs
+
+# Scripts de extração (não fazem parte do app web)
+scripts
+data/scripts

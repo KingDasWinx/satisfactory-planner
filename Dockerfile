@@ -55,5 +55,5 @@ USER nextjs
 
 EXPOSE 3000
 
-# Run pending migrations then start the server
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node server.js"]
+# Aguarda o banco aceitar conexões, roda as migrations e inicia o servidor
+CMD ["sh", "-c", "until node_modules/.bin/prisma migrate deploy; do echo 'DB not ready, retrying in 3s...'; sleep 3; done && node server.js"]

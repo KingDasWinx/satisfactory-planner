@@ -1,4 +1,11 @@
 export const en = {
+  nav: {
+    projects: 'Projects',
+    community: 'Community',
+    settings: 'Settings',
+    reportBug: 'Report a problem',
+  },
+
   settings: {
     title: 'Settings',
     subtitle: 'Planner preferences',

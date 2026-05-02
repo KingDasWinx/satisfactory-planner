@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/i18n'
 
 export type NavSection = 'projects' | 'community' | 'settings'
 
@@ -37,13 +38,19 @@ function IconGear({ className }: { className?: string }) {
   )
 }
 
-const MAIN_ITEMS: { id: NavSection; label: string; icon: (p: { className?: string }) => React.ReactElement }[] = [
-  { id: 'projects', label: 'Projetos', icon: IconFolder },
-  { id: 'community', label: 'Comunidade', icon: IconGlobe },
-]
+const MAIN_ICON_MAP: Record<'projects' | 'community', (p: { className?: string }) => React.ReactElement> = {
+  projects: IconFolder,
+  community: IconGlobe,
+}
 
 export function NavSidebar({ activeSection, onSelect }: NavSidebarProps) {
   const router = useRouter()
+  const t = useT()
+
+  const MAIN_ITEMS: { id: NavSection; label: string; icon: (p: { className?: string }) => React.ReactElement }[] = [
+    { id: 'projects', label: t.nav.projects, icon: IconFolder },
+    { id: 'community', label: t.nav.community, icon: IconGlobe },
+  ]
 
   function handleClick(s: NavSection) {
     if (onSelect) {
@@ -54,10 +61,8 @@ export function NavSidebar({ activeSection, onSelect }: NavSidebarProps) {
   }
 
   function NavBtn({ id }: { id: NavSection }) {
-    const item = id === 'settings'
-      ? { label: 'Configurações', icon: IconGear }
-      : MAIN_ITEMS.find((i) => i.id === id)!
-    const Icon = item.icon
+    const label = id === 'settings' ? t.nav.settings : (MAIN_ITEMS.find((i) => i.id === id)?.label ?? id)
+    const Icon = id === 'settings' ? IconGear : (MAIN_ICON_MAP[id as 'projects' | 'community'] ?? IconFolder)
     const isActive = activeSection === id
     return (
       <button
@@ -69,7 +74,7 @@ export function NavSidebar({ activeSection, onSelect }: NavSidebarProps) {
           }`}
       >
         <Icon />
-        {item.label}
+        {label}
       </button>
     )
   }
@@ -82,7 +87,19 @@ export function NavSidebar({ activeSection, onSelect }: NavSidebarProps) {
         ))}
       </nav>
 
-      <div className="px-2 pb-3 border-t border-slate-800 pt-2">
+      <div className="px-2 pb-3 border-t border-slate-800 pt-2 space-y-0.5">
+        <a
+          href="https://forms.gle/YWQoCoK5JrJ1QJhC6"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-left w-full text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M12 8v4M12 16v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          {t.nav.reportBug}
+        </a>
         <NavBtn id="settings" />
       </div>
     </aside>

@@ -1,4 +1,11 @@
 export const pt = {
+  nav: {
+    projects: 'Projetos',
+    community: 'Comunidade',
+    settings: 'Configurações',
+    reportBug: 'Reportar problema',
+  },
+
   settings: {
     title: 'Configurações',
     subtitle: 'Preferências do planejador',

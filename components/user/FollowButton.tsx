@@ -26,9 +26,9 @@ export function FollowButton({ username, initialIsFollowing }: FollowButtonProps
     }).catch(() => null)
 
     setLoading(false)
-    if (!res) { setError('Falha de rede.'); return }
+    if (!res) { setError('Network error.'); return }
     if (res.status === 401) { openLoginModal(); return }
-    if (!res.ok) { setError('Não foi possível atualizar.'); return }
+    if (!res.ok) { setError('Could not update.'); return }
 
     setIsFollowing((v) => !v)
   }
@@ -45,7 +45,7 @@ export function FollowButton({ username, initialIsFollowing }: FollowButtonProps
             : 'bg-amber-500 hover:bg-amber-400 text-slate-900'
         } disabled:opacity-60`}
       >
-        {loading ? '...' : (isFollowing ? 'Seguindo' : 'Seguir')}
+        {loading ? '...' : (isFollowing ? 'Following' : 'Follow')}
       </button>
       {error && <p className="text-xs text-red-300">{error}</p>}
     </div>

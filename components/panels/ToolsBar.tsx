@@ -108,7 +108,7 @@ export function ToolsBar({
         {/* Voltar para Home */}
         <button
           className="flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
-          title="Voltar para projetos"
+          title="Back to projects"
           onClick={() => router.push('/home')}
         >
           <IconArrowLeft />
@@ -123,8 +123,8 @@ export function ToolsBar({
           onClick={() => setProjectsOpen((v) => !v)}
         >
           <IconFolder />
-          <span className="max-w-[120px] truncate">{projectName || 'Sem projeto'}</span>
-          {!isSaved && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" title="Salvando..." />}
+          <span className="max-w-[120px] truncate">{projectName || 'No project'}</span>
+          {!isSaved && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" title="Saving..." />}
         </button>
 
         <div className="w-px h-5 bg-slate-700 mx-1" />
@@ -136,7 +136,7 @@ export function ToolsBar({
               ? 'bg-slate-700 text-slate-100'
               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
           }`}
-          title="Seleção (Esc)"
+          title="Selection (Esc)"
           onClick={() => onSetTool('pointer')}
         >
           <IconPointer />
@@ -147,7 +147,7 @@ export function ToolsBar({
               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
           }`}
-          title="Nota de texto (T)"
+          title="Text note (T)"
           onClick={() => onSetTool(activeTool === 'text' ? 'pointer' : 'text')}
         >
           <IconText />
@@ -158,7 +158,7 @@ export function ToolsBar({
               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
           }`}
-          title="Área/Frame (F)"
+          title="Area/Frame (F)"
           onClick={() => onSetTool(activeTool === 'frame' ? 'pointer' : 'frame')}
         >
           <IconFrame />
@@ -169,14 +169,14 @@ export function ToolsBar({
         {/* Undo / Redo */}
         <button
           className="flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
-          title="Desfazer (Ctrl+Z)"
+          title="Undo (Ctrl+Z)"
           onClick={onUndo}
         >
           <IconUndo />
         </button>
         <button
           className="flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
-          title="Refazer (Ctrl+Y)"
+          title="Redo (Ctrl+Y)"
           onClick={onRedo}
         >
           <IconRedo />
@@ -187,7 +187,7 @@ export function ToolsBar({
         {/* Exportar PNG */}
         <button
           className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
-          title="Exportar PNG"
+          title="Export PNG"
           onClick={onExportPng}
         >
           <IconDownload />

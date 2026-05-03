@@ -27,12 +27,12 @@ const nodeTypes = {
 function formatRelative(ts: number): string {
   const diff = Date.now() - ts
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'agora mesmo'
-  if (mins < 60) return `há ${mins}min`
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}min ago`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `há ${hrs}h`
+  if (hrs < 24) return `${hrs}h ago`
   const days = Math.floor(hrs / 24)
-  return `há ${days}d`
+  return `${days}d ago`
 }
 
 interface ProjectCardProps {
@@ -89,7 +89,7 @@ export const ProjectCard = memo(function ProjectCard({ meta, data, multiMachines
         {/* Overlay escuro no hover com ação */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
           <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium text-white bg-amber-500 rounded-lg px-3 py-1.5">
-            Abrir editor
+            Open editor
           </span>
         </div>
 
@@ -100,7 +100,7 @@ export const ProjectCard = memo(function ProjectCard({ meta, data, multiMachines
               <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
               <path d="M8 1.5C8 1.5 5 5 5 8s3 6.5 3 6.5M8 1.5C8 1.5 11 5 11 8s-3 6.5-3 6.5M1.5 8h13" stroke="currentColor" strokeWidth="1.2" />
             </svg>
-            Público
+            Public
           </div>
         )}
       </div>
@@ -128,7 +128,7 @@ export const ProjectCard = memo(function ProjectCard({ meta, data, multiMachines
 
         <div className="flex items-center justify-between mt-0.5">
           <p className="text-xs text-slate-600">
-            {nodeCount > 0 ? `${nodeCount} nós · ${edgeCount} arestas` : 'Canvas vazio'}
+            {nodeCount > 0 ? `${nodeCount} nodes · ${edgeCount} edges` : 'Empty canvas'}
           </p>
           <p className="text-xs text-slate-600">{formatRelative(meta.updatedAt)}</p>
         </div>

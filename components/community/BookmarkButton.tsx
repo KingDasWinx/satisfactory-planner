@@ -24,13 +24,13 @@ export function BookmarkButton({ projectId }: { projectId: string }) {
         const ok = list.some((b) => b.project.id === projectId)
         if (!cancelled) setState({ bookmarked: ok })
       })
-      .catch(() => { if (!cancelled) setError('Não foi possível carregar favoritos.') })
+      .catch(() => { if (!cancelled) setError('Could not load bookmarks.') })
     return () => { cancelled = true }
   }, [projectId])
 
   const label = useMemo(() => {
-    if (!state) return 'Favoritar'
-    return state.bookmarked ? 'Favoritado' : 'Favoritar'
+    if (!state) return 'Bookmark'
+    return state.bookmarked ? 'Bookmarked' : 'Bookmark'
   }, [state])
 
   async function toggle() {
@@ -41,9 +41,9 @@ export function BookmarkButton({ projectId }: { projectId: string }) {
     setState({ bookmarked: next })
     const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/bookmark`, { method: next ? 'POST' : 'DELETE' }).catch(() => null)
     setLoading(false)
-    if (!res) { setError('Falha de rede.'); return }
-    if (res.status === 401) { setError('Faça login para favoritar.'); return }
-    if (!res.ok) { setError('Não foi possível atualizar.'); return }
+    if (!res) { setError('Network error.'); return }
+    if (res.status === 401) { setError('Sign in to bookmark.'); return }
+    if (!res.ok) { setError('Could not update.'); return }
   }
 
   return (
@@ -54,7 +54,7 @@ export function BookmarkButton({ projectId }: { projectId: string }) {
           ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:border-emerald-500/60'
           : 'border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700'
       } ${loading ? 'opacity-70' : ''}`}
-      aria-label={state?.bookmarked ? 'Remover favorito' : 'Favoritar projeto'}
+      aria-label={state?.bookmarked ? 'Remove bookmark' : 'Bookmark project'}
       aria-busy={loading}
       disabled={loading || !state}
       onClick={() => { void toggle() }}

@@ -40,10 +40,10 @@ export function EditProfilePanel({
       body: JSON.stringify({ bio, isPrivate, links, badges: [] }),
     }).catch(() => null)
     setLoading(false)
-    if (!res) { setMsg({ text: 'Falha de rede.', ok: false }); return }
-    if (res.status === 401) { setMsg({ text: 'Faça login para editar.', ok: false }); return }
-    if (!res.ok) { setMsg({ text: 'Não foi possível salvar.', ok: false }); return }
-    setMsg({ text: 'Perfil salvo com sucesso!', ok: true })
+    if (!res) { setMsg({ text: 'Network error.', ok: false }); return }
+    if (res.status === 401) { setMsg({ text: 'Sign in to edit.', ok: false }); return }
+    if (!res.ok) { setMsg({ text: 'Could not save.', ok: false }); return }
+    setMsg({ text: 'Profile saved successfully!', ok: true })
   }
 
   return (
@@ -54,7 +54,7 @@ export function EditProfilePanel({
           <label className="text-xs font-medium text-slate-300 uppercase tracking-wide">Bio</label>
           <textarea
             className="w-full bg-slate-800 text-sm text-slate-200 rounded-xl px-4 py-3 outline-none border border-slate-700 focus:border-amber-500 min-h-[110px] resize-none transition-colors"
-            placeholder="Conte um pouco sobre você..."
+            placeholder="Tell us a bit about yourself..."
             value={bio}
             onChange={(e) => setBio(e.target.value)}
           />
@@ -66,8 +66,8 @@ export function EditProfilePanel({
           {/* Privacy toggle */}
           <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-800 border border-slate-700 px-4 py-3">
             <div>
-              <p className="text-xs font-medium text-slate-300">Perfil privado</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Visitantes veem só avatar e @username.</p>
+              <p className="text-xs font-medium text-slate-300">Private profile</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Visitors only see your avatar and @username.</p>
             </div>
             <button
               type="button"
@@ -78,7 +78,7 @@ export function EditProfilePanel({
               }`}
               onClick={() => setIsPrivate((v) => !v)}
             >
-              {isPrivate ? 'Ativado' : 'Desativado'}
+              {isPrivate ? 'Enabled' : 'Disabled'}
             </button>
           </div>
 
@@ -112,7 +112,7 @@ export function EditProfilePanel({
           onClick={save}
           className="rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-amber-500/30 disabled:text-slate-700 transition-colors px-5 py-2 text-sm font-semibold text-slate-900"
         >
-          {loading ? 'Salvando...' : 'Salvar alterações'}
+          {loading ? 'Saving...' : 'Save changes'}
         </button>
       </div>
     </div>

@@ -42,7 +42,7 @@ export function MachineNodeHeader({ id, data }: MachineNodeHeaderProps) {
       )}
       <span className="text-sm font-semibold text-amber-200 truncate">
         {displayMachines !== 1 && (
-          <span className="text-amber-400 mr-1" title={!autoLocked && autoNMachines !== undefined ? `Máquinas efetivas (por gargalo): ${displayMachines}×` : `Máquinas: ${displayMachines}×`}>
+          <span className="text-amber-400 mr-1" title={!autoLocked && autoNMachines !== undefined ? `Effective machines (by bottleneck): ${displayMachines}×` : `Machines: ${displayMachines}×`}>
             {displayMachines}×
           </span>
         )}
@@ -64,7 +64,7 @@ export function MachineNodeHeader({ id, data }: MachineNodeHeaderProps) {
             setConfigAnchor(configAnchor ? null : configBtnRef.current?.getBoundingClientRect() ?? null)
           }}
           className="text-slate-400 hover:text-amber-400 text-xs leading-none px-1"
-          title="Configurações"
+          title="Settings"
         >
           ⚙
         </button>

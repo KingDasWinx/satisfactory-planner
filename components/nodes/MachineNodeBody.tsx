@@ -41,7 +41,7 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
   if (!recipe) {
     return (
       <div className="px-3 py-2">
-        <span className="text-xs text-slate-500 italic">Sem receita disponível</span>
+        <span className="text-xs text-slate-500 italic">No recipe available</span>
       </div>
     )
   }
@@ -65,8 +65,8 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
           className="text-xs text-slate-400 shrink-0 bg-slate-800 rounded px-1.5 py-0.5"
           title={
             !autoLocked && autoNMachines !== undefined
-              ? `Máquinas efetivas (por gargalo): ${displayMachines} · Configurado: ${nMachines} · Clock ${Math.round(clockSpeed * 100)}%`
-              : `Configuração: ${nMachines} máquina(s) · Clock ${Math.round(clockSpeed * 100)}%`
+              ? `Effective machines (by bottleneck): ${displayMachines} · Configured: ${nMachines} · Clock ${Math.round(clockSpeed * 100)}%`
+              : `Configuration: ${nMachines} machine(s) · Clock ${Math.round(clockSpeed * 100)}%`
           }
         >
           ×{displayMachines} · {Math.round(clockSpeed * 100)}%
@@ -104,17 +104,17 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
                     <>
                       <span
                         className={r1(got) >= r1(need) ? 'text-emerald-400' : 'text-red-400'}
-                        title={`Recebendo ${fmt(got)}/m de ${fmt(need)}/m necessários`}
+                        title={`Receiving ${fmt(got)}/min out of ${fmt(need)}/min needed`}
                       >
                         {fmt(got)}
                       </span>
                       <span className="text-slate-600">/</span>
-                      <span className="text-slate-400" title={`Necessário (capacidade total): ${fmt(need)}/m`}>
+                      <span className="text-slate-400" title={`Required (total capacity): ${fmt(need)}/min`}>
                         {fmt(need)}/m
                       </span>
                     </>
                   ) : (
-                    <span className="text-slate-500" title={`Necessário (capacidade total): ${fmt(need)}/m`}>
+                    <span className="text-slate-500" title={`Required (total capacity): ${fmt(need)}/min`}>
                       {fmt(need)}/m
                     </span>
                   )}
@@ -154,19 +154,19 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
                     </>
                   ) : consumed !== undefined ? (
                     <>
-                      <span className="text-slate-400" title={`Produção efetiva: ${fmt(prod)}/m`}>
+                      <span className="text-slate-400" title={`Effective production: ${fmt(prod)}/min`}>
                         {fmt(prod)}
                       </span>
                       <span className="text-slate-600">/</span>
                       <span
                         className={r1(consumed) <= r1(prod) ? 'text-emerald-400' : 'text-red-400'}
-                        title={`Puxado pelo downstream: ${fmt(consumed)}/m`}
+                        title={`Pulled by downstream: ${fmt(consumed)}/min`}
                       >
                         {fmt(consumed)}/m
                       </span>
                     </>
                   ) : (
-                    <span className="text-slate-500" title={`Produção efetiva: ${fmt(prod)}/m`}>
+                    <span className="text-slate-500" title={`Effective production: ${fmt(prod)}/min`}>
                       {fmt(prod)}/m
                     </span>
                   )}
@@ -196,13 +196,13 @@ export function MachineNodeBody({ id, data, baseRates, effectiveRates, isExtract
           return (
             <div
               className="mt-1 rounded border border-slate-700 bg-slate-800/60 px-2 py-1 text-[10px] text-slate-300"
-              title="Você tem capacidade de produção sobrando: o downstream não está puxando tudo."
+              title="You have spare production capacity: downstream is not consuming everything."
             >
-              <span className="text-slate-400 font-bold">Sobra</span>
+              <span className="text-slate-400 font-bold">Surplus</span>
               <span className="text-slate-500"> · </span>
               <span>{fmt(unusedTotal)}/m</span>
               <span className="text-slate-500"> · </span>
-              <span>≈ -{fmt(unusedMachinesEq)} máquina (equiv.)</span>
+              <span>≈ -{fmt(unusedMachinesEq)} machine (equiv.)</span>
             </div>
           )
         })()

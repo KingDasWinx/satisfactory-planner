@@ -25,14 +25,14 @@ export function FollowersList({ username }: { username: string }) {
     <div className="space-y-3">
       <input
         className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500"
-        placeholder="Buscar seguidores..."
+        placeholder="Search followers..."
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
       {loading ? (
-        <p className="text-sm text-slate-600">Carregando...</p>
+        <p className="text-sm text-slate-600">Loading...</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-slate-600">Nenhum seguidor.</p>
+        <p className="text-sm text-slate-600">No followers.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {items.map((u) => (

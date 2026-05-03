@@ -58,7 +58,7 @@ export const FrameNode = memo(function FrameNode({ id, data, selected }: NodePro
           />
         ) : (
           <span className="flex-1 text-sm font-semibold truncate" style={{ color: borderColor }}>
-            {data.label || 'Área'}
+            {data.label || 'Area'}
           </span>
         )}
 
@@ -66,7 +66,7 @@ export const FrameNode = memo(function FrameNode({ id, data, selected }: NodePro
         {(selected || locked) && (
           <button
             className="nodrag flex-shrink-0 rounded p-0.5 transition-colors hover:bg-white/10"
-            title={locked ? 'Destravado: itens dentro movem independentemente' : 'Travado: arrastar o frame move os itens dentro'}
+            title={locked ? 'Unlocked: items inside move independently' : 'Locked: dragging the frame moves items inside'}
             onClick={(e) => {
               e.stopPropagation()
               setFrameNodeLocked(id, !locked)

@@ -35,10 +35,10 @@ function initials(nameOrUsername: string): string {
 }
 
 const PUBLIC_TABS = [
-  { key: 'destaques', label: 'Destaques' },
-  { key: 'projetos', label: 'Projetos' },
-  { key: 'seguidores', label: 'Seguidores' },
-  { key: 'seguindo', label: 'Seguindo' },
+  { key: 'destaques', label: 'Featured' },
+  { key: 'projetos', label: 'Projects' },
+  { key: 'seguidores', label: 'Followers' },
+  { key: 'seguindo', label: 'Following' },
 ]
 
 // ─── Menu de ações (⋯) ─────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ function UserActionsMenu({ username, initialIsBlocked }: { username: string; ini
         type="button"
         disabled={loading}
         onClick={() => setOpen((v) => !v)}
-        aria-label="Mais ações"
+        aria-label="More actions"
         className="flex items-center justify-center w-9 h-9 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors disabled:opacity-50"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -98,7 +98,7 @@ function UserActionsMenu({ username, initialIsBlocked }: { username: string; ini
               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
               <path d="M4.93 4.93l14.14 14.14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            {isBlocked ? 'Desbloquear usuário' : 'Bloquear usuário'}
+            {isBlocked ? 'Unblock user' : 'Block user'}
           </button>
         </div>
       )}
@@ -232,7 +232,7 @@ export function PublicProfileHeader({
       {/* Informações do perfil */}
       <div className="px-6 pt-12 pb-4 space-y-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">{name?.trim() || 'Usuário'}</h1>
+          <h1 className="text-xl font-bold text-slate-100">{name?.trim() || 'User'}</h1>
           <p className="text-sm text-slate-500 mt-0.5">@{username}</p>
           {bio && <p className="text-sm text-slate-400 mt-2 leading-relaxed">{bio}</p>}
         </div>
@@ -243,7 +243,7 @@ export function PublicProfileHeader({
             {level >= 1 && (
               <span className="inline-flex items-center gap-1 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-0.5 font-medium">
                 <IconStar />
-                Nível {level}
+                Level {level}
               </span>
             )}
             {badges?.map((badge) => (
@@ -257,13 +257,13 @@ export function PublicProfileHeader({
         {/* Stats */}
         <div className="flex items-center gap-5 text-sm">
           <Link href={`${base}?tab=projetos`} className="text-slate-400 hover:text-amber-400 transition-colors">
-            <b className="text-slate-100 font-semibold">{counts.publicProjects}</b> projetos
+            <b className="text-slate-100 font-semibold">{counts.publicProjects}</b> projects
           </Link>
           <Link href={`${base}?tab=seguidores`} className="text-slate-400 hover:text-amber-400 transition-colors">
-            <b className="text-slate-100 font-semibold">{counts.followers}</b> seguidores
+            <b className="text-slate-100 font-semibold">{counts.followers}</b> followers
           </Link>
           <Link href={`${base}?tab=seguindo`} className="text-slate-400 hover:text-amber-400 transition-colors">
-            <b className="text-slate-100 font-semibold">{counts.following}</b> seguindo
+            <b className="text-slate-100 font-semibold">{counts.following}</b> following
           </Link>
         </div>
       </div>
@@ -294,7 +294,7 @@ export function PublicProfileHeader({
                     : 'border-transparent text-slate-500 hover:text-slate-300'
                 }`}
               >
-                Minha conta
+                My account
               </Link>
               <Link
                 href={`${base}?tab=editar`}
@@ -304,7 +304,7 @@ export function PublicProfileHeader({
                     : 'border-transparent text-slate-500 hover:text-slate-300'
                 }`}
               >
-                Editar perfil
+                Edit profile
               </Link>
             </>
           )}

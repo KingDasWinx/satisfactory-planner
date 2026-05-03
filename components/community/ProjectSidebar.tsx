@@ -51,7 +51,7 @@ export function ProjectSidebar({
           className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
         >
           <IconBack />
-          Voltar para comunidade
+          Back to community
         </Link>
       </div>
 
@@ -98,7 +98,7 @@ export function ProjectSidebar({
         {/* Comentários */}
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-300">
-            {commentCount > 0 ? `Comentários (${commentCount})` : 'Comentários'}
+            {commentCount > 0 ? `Comments (${commentCount})` : 'Comments'}
           </h2>
           <CommentsPanel projectId={projectId} />
         </div>

@@ -13,9 +13,9 @@ type SearchMenuProps = {
 }
 
 const SPECIAL_NODES = [
-  { id: 'splitter', label: 'Splitter', iconSrc: SPLITTER_ICON_SRC, description: '1 entrada → 3 saídas' },
-  { id: 'merger', label: 'Merger', iconSrc: MERGER_ICON_SRC, description: '3 entradas → 1 saída' },
-  { id: 'storage', label: 'Storage', iconSrc: STORAGE_ICON_SRC, description: '1 entrada → 1 saída' },
+  { id: 'splitter', label: 'Splitter', iconSrc: SPLITTER_ICON_SRC, description: '1 input → 3 outputs' },
+  { id: 'merger', label: 'Merger', iconSrc: MERGER_ICON_SRC, description: '3 inputs → 1 output' },
+  { id: 'storage', label: 'Storage', iconSrc: STORAGE_ICON_SRC, description: '1 input → 1 output' },
 ] as const
 
 const MARGIN = 12 // min distance from viewport edge
@@ -203,12 +203,12 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
 
   const title =
     menu.type === 'input'
-      ? `Produtores de "${menu.inputPart}"`
+      ? `Producers of "${menu.inputPart}"`
       : menu.type === 'output'
       ? menu.outputParts.length > 1
-        ? `Consumidores de ${menu.outputParts.slice(0, 2).map(p => `"${p}"`).join(', ')}${menu.outputParts.length > 2 ? '…' : ''}`
-        : `Consumidores de "${menu.outputPart}"`
-      : 'Adicionar receita'
+        ? `Consumers of ${menu.outputParts.slice(0, 2).map(p => `"${p}"`).join(', ')}${menu.outputParts.length > 2 ? '…' : ''}`
+        : `Consumers of "${menu.outputPart}"`
+      : 'Add recipe'
 
   return (
     <>
@@ -240,7 +240,7 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
         <div className="flex">
         {/* Left sidebar — logistics nodes */}
         <div className="w-28 border-r border-slate-700 flex flex-col pt-2 pb-2">
-          <p className="text-[10px] text-slate-500 font-semibold px-2 mb-1 uppercase tracking-wide">Logística</p>
+          <p className="text-[10px] text-slate-500 font-semibold px-2 mb-1 uppercase tracking-wide">Logistics</p>
           {SPECIAL_NODES.map((node) => (
             <button
               key={node.id}
@@ -270,7 +270,7 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Buscar receita ou máquina..."
+              placeholder="Search recipe or machine..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
@@ -279,7 +279,7 @@ export function SearchMenu({ recipes, machines }: SearchMenuProps) {
 
           <div className="max-h-80 overflow-y-auto pb-2">
             {filteredRecipes.length === 0 && (
-              <p className="px-4 py-4 text-sm text-slate-500 text-center">Nenhuma receita encontrada</p>
+              <p className="px-4 py-4 text-sm text-slate-500 text-center">No recipe found</p>
             )}
             {filteredRecipes.map((recipe) => {
               const machine = resolveMachine(recipe.machine)

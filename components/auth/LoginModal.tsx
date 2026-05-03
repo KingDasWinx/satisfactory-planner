@@ -170,7 +170,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       }).catch(() => null)
       if (!rr?.ok) {
         setLoading(false)
-        setError(rr?.status === 409 ? 'E-mail ou username já cadastrado.' : 'Não foi possível criar a conta.')
+        setError(rr?.status === 409 ? 'Email or username already taken.' : 'Could not create account.')
         return
       }
     }
@@ -180,11 +180,11 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       setLoading(false)
       // Auth.js v5 retorna HTTP 200 mesmo em falha — checar error, ok e url
       const failed = res?.error || !res?.ok || res?.url?.includes('error=')
-      if (failed) setError('E-mail ou senha inválidos.')
+      if (failed) setError('Invalid email or password.')
       else onClose()
     } catch {
       setLoading(false)
-      setError('E-mail ou senha inválidos.')
+      setError('Invalid email or password.')
     }
   }
 
@@ -195,7 +195,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       {/* Backdrop */}
       <button
         type="button"
-        aria-label="Fechar"
+        aria-label="Close"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -211,7 +211,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
           <div className="relative flex flex-col items-center pt-8 pb-5 px-6">
             <button
               type="button"
-              aria-label="Fechar"
+              aria-label="Close"
               onClick={onClose}
               className="absolute top-4 right-4 rounded-lg p-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             >
@@ -226,7 +226,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
               Satisfactory Planner
             </h2>
             <p className="text-sm text-slate-500 mt-1 text-center">
-              {mode === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta grátis'}
+              {mode === 'login' ? 'Welcome back' : 'Create your free account'}
             </p>
           </div>
 
@@ -244,7 +244,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                       : 'text-slate-500 hover:text-slate-300'
                   }`}
                 >
-                  {m === 'login' ? 'Entrar' : 'Criar conta'}
+                  {m === 'login' ? 'Sign in' : 'Create account'}
                 </button>
               ))}
             </div>
@@ -279,7 +279,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
               {/* Divisor só aparece se há OAuth + formulário */}
               <div className="px-6 mb-5 flex items-center gap-3">
                 <div className="flex-1 h-px bg-slate-800" />
-                <span className="text-[11px] text-slate-600 font-medium tracking-wide uppercase">ou com e-mail</span>
+                <span className="text-[11px] text-slate-600 font-medium tracking-wide uppercase">or with email</span>
                 <div className="flex-1 h-px bg-slate-800" />
               </div>
             </>
@@ -306,7 +306,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                   </div>
                   <input
                     className="w-full bg-slate-900 border border-slate-800 text-sm text-slate-200 rounded-xl pl-9 pr-4 py-2.5 outline-none focus:border-amber-500/70 focus:bg-slate-800/60 placeholder-slate-600 transition-colors"
-                    placeholder="Seu nome (opcional)"
+                    placeholder="Your name (optional)"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
@@ -354,7 +354,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="w-full bg-slate-900 border border-slate-800 text-sm text-slate-200 rounded-xl pl-9 pr-10 py-2.5 outline-none focus:border-amber-500/70 focus:bg-slate-800/60 placeholder-slate-600 transition-colors"
-                  placeholder={mode === 'register' ? 'Mínimo 8 caracteres' : 'Sua senha'}
+                  placeholder={mode === 'register' ? 'Minimum 8 characters' : 'Your password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') void handleSubmit() }}
@@ -364,7 +364,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                   tabIndex={-1}
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   <IconEye closed={showPassword} />
                 </button>
@@ -386,11 +386,11 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
                     <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
-                  {mode === 'register' ? 'Criando conta...' : 'Entrando...'}
+                  {mode === 'register' ? 'Creating account...' : 'Signing in...'}
                 </>
               ) : (
                 <>
-                  {mode === 'register' ? 'Criar conta e entrar' : 'Entrar'}
+                  {mode === 'register' ? 'Create account and sign in' : 'Sign in'}
                   <IconArrow />
                 </>
               )}

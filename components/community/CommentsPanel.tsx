@@ -28,8 +28,8 @@ export function CommentsPanel({ projectId }: { projectId: string }) {
     setLoading(true)
     setError(null)
     const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/comments`).catch(() => null)
-    if (!res) { setLoading(false); setError('Falha de rede.'); return }
-    if (!res.ok) { setLoading(false); setError('Não foi possível carregar.'); return }
+    if (!res) { setLoading(false); setError('Network error.'); return }
+    if (!res.ok) { setLoading(false); setError('Could not load.'); return }
     const json = (await res.json().catch(() => null)) as unknown
     setItems(Array.isArray(json) ? (json as Comment[]) : [])
     setLoading(false)
@@ -42,7 +42,7 @@ export function CommentsPanel({ projectId }: { projectId: string }) {
     fetch(`/api/projects/${encodeURIComponent(projectId)}/comments`)
       .then((r) => (r.ok ? (r.json() as Promise<Comment[]>) : Promise.reject(new Error('bad'))))
       .then((json) => { if (!cancelled) setItems(Array.isArray(json) ? json : []) })
-      .catch(() => { if (!cancelled) setError('Não foi possível carregar.') })
+      .catch(() => { if (!cancelled) setError('Could not load.') })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => {
       cancelled = true
@@ -63,9 +63,9 @@ export function CommentsPanel({ projectId }: { projectId: string }) {
       body: JSON.stringify({ content }),
     }).catch(() => null)
     setPosting(false)
-    if (!res) { setError('Falha de rede.'); return }
-    if (res.status === 401) { setError('Faça login para comentar.'); return }
-    if (!res.ok) { setError('Não foi possível enviar.'); return }
+    if (!res) { setError('Network error.'); return }
+    if (res.status === 401) { setError('Sign in to comment.'); return }
+    if (!res.ok) { setError('Could not send.'); return }
     setContent('')
     refreshTimer.current = window.setTimeout(() => { void refresh() }, 250)
   }
@@ -73,9 +73,9 @@ export function CommentsPanel({ projectId }: { projectId: string }) {
   async function del(commentId: string) {
     setError(null)
     const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/comments/${encodeURIComponent(commentId)}`, { method: 'DELETE' }).catch(() => null)
-    if (!res) { setError('Falha de rede.'); return }
+    if (!res) { setError('Network error.'); return }
     if (res.status === 403) return
-    if (!res.ok) { setError('Não foi possível excluir.'); return }
+    if (!res.ok) { setError('Could not delete.'); return }
     setItems((prev) => prev.filter((c) => c.id !== commentId))
   }
 
@@ -84,10 +84,10 @@ export function CommentsPanel({ projectId }: { projectId: string }) {
       <div className="space-y-1.5">
         <textarea
           className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500 min-h-[84px] resize-none"
-          placeholder="Escreva um comentário..."
+          placeholder="Write a comment..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          aria-label="Escrever comentário"
+          aria-label="Write a comment"
           aria-busy={posting}
         />
         <div className="flex items-center justify-between">
@@ -97,19 +97,19 @@ export function CommentsPanel({ projectId }: { projectId: string }) {
             className="rounded-lg bg-amber-500 hover:bg-amber-400 disabled:bg-amber-500/30 disabled:text-slate-700 transition-colors px-3 py-1.5 text-xs font-semibold text-slate-900"
             disabled={!canPost || posting}
             onClick={() => { void post() }}
-            aria-label="Enviar comentário"
+            aria-label="Post comment"
             aria-busy={posting}
           >
-            {posting ? 'Enviando...' : 'Enviar'}
+            {posting ? 'Sending...' : 'Send'}
           </button>
         </div>
         {error && <p className="text-xs text-amber-300">{error}</p>}
       </div>
 
       {loading ? (
-        <p className="text-xs text-slate-600">Carregando...</p>
+        <p className="text-xs text-slate-600">Loading...</p>
       ) : items.length === 0 ? (
-        <p className="text-xs text-slate-600">Nenhum comentário ainda.</p>
+        <p className="text-xs text-slate-600">No comments yet.</p>
       ) : (
         <div className="space-y-2 max-h-[320px] overflow-auto pr-1">
           {items.map((c) => {
@@ -130,9 +130,9 @@ export function CommentsPanel({ projectId }: { projectId: string }) {
                         type="button"
                         className="text-[11px] text-slate-500 hover:text-red-300"
                         onClick={() => { void del(c.id) }}
-                        aria-label="Excluir comentário"
+                        aria-label="Delete comment"
                       >
-                        Excluir
+                        Delete
                       </button>
                     )}
                   </div>

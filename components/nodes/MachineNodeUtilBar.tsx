@@ -32,13 +32,13 @@ export function MachineNodeUtilBar({ inputs, rates, incomingSupply }: MachineNod
   return (
     <div
       className="mt-1.5"
-      title={`Utilização: ${pct}% da capacidade de produção está sendo alimentada`}
+      title={`Utilization: ${pct}% of production capacity is being fed`}
     >
       <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] text-slate-500">Utilização</span>
+        <span className="text-[10px] text-slate-500">Utilization</span>
         <span
           className={`text-[10px] font-bold tabular-nums ${textColor}`}
-          title={`Eficiência (mínimo por insumo): ${(efficiency * 100).toFixed(1)}%`}
+          title={`Efficiency (minimum per input): ${(efficiency * 100).toFixed(1)}%`}
         >
           {pct}%
         </span>

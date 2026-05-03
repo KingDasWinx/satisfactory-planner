@@ -13,7 +13,7 @@ interface CreateProjectModalProps {
 }
 
 function visibilityLabel(v: ProjectVisibility): string {
-  return v === 'private' ? 'Privado' : 'Comunidade'
+  return v === 'private' ? 'Private' : 'Community'
 }
 
 export function CreateProjectModal({ open, initialName, onClose, onCreate }: CreateProjectModalProps) {
@@ -56,7 +56,7 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
     <div className="fixed inset-0 z-[10000]">
       <button
         type="button"
-        aria-label="Fechar"
+        aria-label="Close"
         className="absolute inset-0 bg-black/60"
         onClick={onClose}
       />
@@ -71,10 +71,10 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
           <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between gap-3">
             <div>
               <h2 id={titleId} className="text-sm font-bold text-slate-100 leading-tight">
-                Criar projeto
+                Create project
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Defina um nome, uma descrição e a visibilidade.
+                Set a name, description and visibility.
               </p>
             </div>
             <button
@@ -82,20 +82,20 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
               className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
               onClick={onClose}
             >
-              Fechar
+              Close
             </button>
           </div>
 
           <div className="px-5 py-4 space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-300" htmlFor={`${titleId}-name`}>
-                Nome
+                Name
               </label>
               <input
                 id={`${titleId}-name`}
                 autoFocus
                 className="w-full bg-slate-800 text-sm text-slate-200 rounded-lg px-3 py-2 outline-none border border-slate-700 focus:border-amber-500"
-                placeholder="Nova fábrica"
+                placeholder="New factory"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -103,7 +103,7 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-300" htmlFor={`${titleId}-desc`}>
-                Descrição
+                Description
               </label>
               <textarea
                 id={`${titleId}-desc`}
@@ -115,7 +115,7 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs font-medium text-slate-300">Visibilidade</p>
+              <p className="text-xs font-medium text-slate-300">Visibility</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(['private', 'community'] as const).map((v) => {
                   const active = visibility === v
@@ -139,13 +139,13 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
                           {visibilityLabel(v)}
                         </span>
                         <span className={`text-xs ${active && !disabled ? 'text-amber-400' : 'text-slate-500'}`}>
-                          {disabled ? 'Requer nuvem' : active ? 'Selecionado' : 'Selecionar'}
+                          {disabled ? 'Requires cloud' : active ? 'Selected' : 'Select'}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                         {v === 'private'
-                          ? 'Fica só com você (não aparece na aba Comunidade).'
-                          : 'Aparece para outras pessoas na aba Comunidade.'}
+                          ? 'Stays private to you (not shown in the Community tab).'
+                          : 'Visible to other people in the Community tab.'}
                       </p>
                     </button>
                   )
@@ -161,7 +161,7 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
                 }
               </svg>
               <p className="text-xs text-slate-400">
-                {saveTarget === 'cloud' ? 'Salvo na nuvem (conta conectada)' : 'Salvo localmente neste navegador'}
+                {saveTarget === 'cloud' ? 'Saved to cloud (account connected)' : 'Saved locally in this browser'}
               </p>
             </div>
           </div>
@@ -172,7 +172,7 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
               className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
               onClick={onClose}
             >
-              Cancelar
+              Cancel
             </button>
             <button
               type="button"
@@ -181,14 +181,14 @@ export function CreateProjectModal({ open, initialName, onClose, onCreate }: Cre
               onClick={() => {
                 const trimmed = name.trim()
                 onCreate({
-                  name: trimmed || 'Nova fábrica',
+                  name: trimmed || 'New factory',
                   description: description.trim(),
                   visibility,
                   saveTarget,
                 })
               }}
             >
-              Criar
+              Create
             </button>
           </div>
         </div>

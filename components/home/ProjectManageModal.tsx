@@ -76,7 +76,7 @@ export function ProjectManageModal({ meta, onClose, onDelete }: ProjectManageMod
       <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/50 overflow-hidden">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-          <h2 className="text-base font-semibold text-slate-100">Gerenciar projeto</h2>
+          <h2 className="text-base font-semibold text-slate-100">Manage project</h2>
           <button
             onClick={onClose}
             className="rounded-lg p-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
@@ -89,35 +89,35 @@ export function ProjectManageModal({ meta, onClose, onDelete }: ProjectManageMod
         <div className="px-6 py-5 space-y-4">
           {/* Nome */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-400">Nome</label>
+            <label className="block text-xs font-medium text-slate-400">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={80}
               className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-amber-500 transition-colors"
-              placeholder="Nome do projeto"
+              placeholder="Project name"
             />
           </div>
 
           {/* Descrição */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-400">Descrição</label>
+            <label className="block text-xs font-medium text-slate-400">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               maxLength={300}
               className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-amber-500 transition-colors resize-none"
-              placeholder="Descreva o projeto (opcional)"
+              placeholder="Describe the project (optional)"
             />
           </div>
 
           {/* Visibilidade */}
           <div className="flex items-center justify-between rounded-lg bg-slate-800/60 border border-slate-700/60 px-4 py-3">
             <div>
-              <p className="text-sm font-medium text-slate-200">Projeto público</p>
-              <p className="text-xs text-slate-500 mt-0.5">Visível para toda a comunidade</p>
+              <p className="text-sm font-medium text-slate-200">Public project</p>
+              <p className="text-xs text-slate-500 mt-0.5">Visible to the entire community</p>
             </div>
             <button
               type="button"
@@ -144,27 +144,27 @@ export function ProjectManageModal({ meta, onClose, onDelete }: ProjectManageMod
             disabled={!isDirty || !name.trim() || saving}
             className="w-full rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-semibold text-sm py-2.5 transition-colors"
           >
-            {saving ? 'Salvando...' : 'Salvar alterações'}
+            {saving ? 'Saving...' : 'Save changes'}
           </button>
 
           <div className="h-px bg-slate-800" />
 
           {confirmDelete ? (
             <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 space-y-3">
-              <p className="text-sm text-red-400 font-medium">Excluir permanentemente?</p>
-              <p className="text-xs text-slate-500">Esta ação não pode ser desfeita.</p>
+              <p className="text-sm text-red-400 font-medium">Delete permanently?</p>
+              <p className="text-xs text-slate-500">This action cannot be undone.</p>
               <div className="flex gap-2">
                 <button
                   onClick={handleDelete}
                   className="flex-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-semibold py-2 transition-colors"
                 >
-                  Sim, excluir
+                  Yes, delete
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
                   className="flex-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm py-2 transition-colors"
                 >
-                  Cancelar
+                  Cancel
                 </button>
               </div>
             </div>
@@ -174,7 +174,7 @@ export function ProjectManageModal({ meta, onClose, onDelete }: ProjectManageMod
               className="flex items-center justify-center gap-2 w-full rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 text-sm py-2.5 transition-colors"
             >
               <IconTrash />
-              Excluir projeto
+              Delete project
             </button>
           )}
         </div>

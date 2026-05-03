@@ -46,7 +46,7 @@ export function ExtractorRateInput({
   return (
     <span
       className="text-slate-400 cursor-text hover:text-amber-300 hover:underline decoration-dotted underline-offset-2 transition-colors"
-      title="Clique para editar"
+      title="Click to edit"
       onClick={(e) => { e.stopPropagation(); onStartEdit(value) }}
     >
       {fmt(value)}/m

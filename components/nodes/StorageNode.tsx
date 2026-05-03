@@ -63,13 +63,13 @@ export function StorageNode({ data, selected }: StorageNodeProps) {
       {/* Linha resumo: entrada / saída / saldo */}
       {hasData && (
         <div className="px-3 py-2 flex items-center gap-2 text-[10px] tabular-nums border-b border-slate-800/60">
-          <span className="text-blue-300" title={`Entrada total: ${fmt(totalIn)}/m`}>↓ {fmt(totalIn)}/m</span>
+          <span className="text-blue-300" title={`Total input: ${fmt(totalIn)}/min`}>↓ {fmt(totalIn)}/m</span>
           <span className="text-slate-600">·</span>
-          <span className="text-emerald-300" title={`Saída total: ${fmt(totalOut)}/m`}>↑ {fmt(totalOut)}/m</span>
+          <span className="text-emerald-300" title={`Total output: ${fmt(totalOut)}/min`}>↑ {fmt(totalOut)}/m</span>
           <span className="text-slate-600">·</span>
           <span
             className={balanceColor}
-            title={`Saldo (in - out): ${balance > 0 ? '+' : ''}${fmt(balance)}/m`}
+            title={`Balance (in - out): ${balance > 0 ? '+' : ''}${fmt(balance)}/min`}
           >
             {balance > 0 ? '+' : ''}{fmt(balance)}
           </span>
@@ -83,7 +83,7 @@ export function StorageNode({ data, selected }: StorageNodeProps) {
             onClick={() => setExpanded(e => !e)}
             className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-slate-400 hover:text-slate-200 transition-colors"
           >
-            <span>{allParts.length} material{allParts.length !== 1 ? 'is' : ''}</span>
+            <span>{allParts.length} item{allParts.length !== 1 ? 's' : ''}</span>
             <span>{expanded ? '▲' : '▼'}</span>
           </button>
 
@@ -91,7 +91,7 @@ export function StorageNode({ data, selected }: StorageNodeProps) {
             <div className="border-t border-slate-800/60 rounded-b-lg overflow-hidden">
               {/* Cabeçalho colunas */}
               <div className="flex items-center justify-between px-3 py-1 text-[9px] text-slate-600 uppercase tracking-wide border-b border-slate-800/60">
-                <span>Material</span>
+                <span>Item</span>
                 <div className="flex gap-3">
                   <span className="w-12 text-right">in</span>
                   <span className="w-12 text-right">out</span>
@@ -105,8 +105,8 @@ export function StorageNode({ data, selected }: StorageNodeProps) {
                   <div key={part} className="flex items-center justify-between px-3 py-1.5 text-[10px] border-t border-slate-800/40">
                     <span className="text-slate-300 truncate mr-2">{part}</span>
                     <div className="flex gap-3 shrink-0 tabular-nums">
-                      <span className="w-12 text-right text-blue-300" title={`Entrada ${part}: ${fmt(inRate)}/m`}>{fmt(inRate)}</span>
-                      <span className={`w-12 text-right ${deficit ? 'text-red-400' : 'text-emerald-400'}`} title={`Saída ${part}: ${fmt(outRate)}/m`}>{fmt(outRate)}</span>
+                      <span className="w-12 text-right text-blue-300" title={`Input ${part}: ${fmt(inRate)}/min`}>{fmt(inRate)}</span>
+                      <span className={`w-12 text-right ${deficit ? 'text-red-400' : 'text-emerald-400'}`} title={`Output ${part}: ${fmt(outRate)}/min`}>{fmt(outRate)}</span>
                     </div>
                   </div>
                 )
@@ -119,7 +119,7 @@ export function StorageNode({ data, selected }: StorageNodeProps) {
       {/* Estado vazio */}
       {!hasData && allParts.length === 0 && (
         <div className="px-3 py-2 text-[10px] text-slate-600 text-center">
-          Sem conexões
+          No connections
         </div>
       )}
     </div>

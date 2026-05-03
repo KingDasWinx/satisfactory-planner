@@ -11,9 +11,9 @@ export function LevelProgressBar({ level, points }: LevelProgressBarProps) {
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between text-xs">
-        <span className="text-amber-400 font-semibold">Nível {level}</span>
+        <span className="text-amber-400 font-semibold">Level {level}</span>
         <span className="text-slate-500">
-          {points} pts · {pointsToNext} para o próximo
+          {points} pts · {pointsToNext} to next
         </span>
       </div>
       <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">

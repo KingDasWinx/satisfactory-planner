@@ -154,7 +154,7 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
       }
 
       // Nenhum projeto encontrado → cria um local novo
-      if (!storedData) createProjectLocal({ name: 'Minha fábrica', description: '', isPublic: false })
+      if (!storedData) createProjectLocal({ name: 'My factory', description: '', isPublic: false })
       setHydrated(true)
     }
 
@@ -395,8 +395,8 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
               <div className="text-center text-slate-600">
                 <div className="text-5xl mb-3">⚙</div>
-                <p className="text-lg font-medium">Duplo clique para adicionar uma receita</p>
-                <p className="text-sm mt-1">Arraste as entradas para criar fornecedores automaticamente</p>
+                <p className="text-lg font-medium">Double-click to add a recipe</p>
+                <p className="text-sm mt-1">Drag inputs to auto-create suppliers</p>
               </div>
             </div>
           )}
@@ -423,7 +423,7 @@ export function FactoryEditor({ machines, recipes, multiMachines, projectId, rea
               <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
               <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            Modo visualização
+            View mode
           </div>
         )}
 

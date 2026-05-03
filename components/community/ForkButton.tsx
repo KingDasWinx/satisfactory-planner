@@ -47,7 +47,7 @@ export function ForkButton({ projectId }: ForkButtonProps) {
     }).catch(() => null)
     setLoading(false)
 
-    if (!res?.ok) { setError('Não foi possível fazer o fork.'); return }
+    if (!res?.ok) { setError('Could not fork.'); return }
     const json = await res.json().catch(() => null) as { mode?: string; id?: string } | null
     if (json?.mode === 'cloud' && json.id) {
       router.push(`/project/${json.id}/edit`)
@@ -65,7 +65,7 @@ export function ForkButton({ projectId }: ForkButtonProps) {
         className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 hover:border-slate-700 px-3 py-2.5 text-sm font-semibold text-slate-200 transition-colors disabled:opacity-60"
       >
         <IconFork />
-        {loading ? 'Fazendo fork...' : 'Fazer fork'}
+        {loading ? 'Forking...' : 'Fork'}
       </button>
       {error && <p className="text-xs text-red-300 text-center">{error}</p>}
     </div>

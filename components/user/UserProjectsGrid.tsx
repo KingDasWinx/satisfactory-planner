@@ -32,14 +32,14 @@ export function UserProjectsGrid({ username }: UserProjectsGridProps) {
       })
       .catch(() => {
         if (cancelled) return
-        setError('Não foi possível carregar os projetos.')
+        setError('Could not load projects.')
         setLoading(false)
       })
     return () => { cancelled = true }
   }, [username])
 
   if (loading) {
-    return <p className="text-sm text-slate-600">Carregando projetos...</p>
+    return <p className="text-sm text-slate-600">Loading projects...</p>
   }
 
   if (error) {
@@ -51,7 +51,7 @@ export function UserProjectsGrid({ username }: UserProjectsGridProps) {
   }
 
   if (items.length === 0) {
-    return <p className="text-sm text-slate-600">Nenhum projeto público ainda.</p>
+    return <p className="text-sm text-slate-600">No public projects yet.</p>
   }
 
   return (
@@ -67,7 +67,7 @@ export function UserProjectsGrid({ username }: UserProjectsGridProps) {
             <span className="text-[11px] text-slate-600">/view</span>
           </div>
           {p.description && <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">{p.description}</p>}
-          <p className="text-xs text-slate-600 mt-3">Atualizado em {new Date(p.updatedAt).toLocaleDateString('pt-BR')}</p>
+          <p className="text-xs text-slate-600 mt-3">Updated {new Date(p.updatedAt).toLocaleDateString('en-US')}</p>
         </Link>
       ))}
     </div>

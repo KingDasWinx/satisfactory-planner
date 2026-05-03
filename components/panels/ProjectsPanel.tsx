@@ -14,12 +14,12 @@ interface ProjectsPanelProps {
 function formatRelative(ts: number): string {
   const diff = Date.now() - ts
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'agora mesmo'
-  if (mins < 60) return `há ${mins} min`
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins} min ago`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `há ${hrs}h`
+  if (hrs < 24) return `${hrs}h ago`
   const days = Math.floor(hrs / 24)
-  return `há ${days}d`
+  return `${days}d ago`
 }
 
 export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
@@ -54,7 +54,7 @@ export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
   }
 
   function handleCreate() {
-    const name = newProjectName.trim() || 'Nova fábrica'
+    const name = newProjectName.trim() || 'New factory'
     createProjectLocal({ name, description: '', isPublic: false })
     setNewProjectName('')
     setCreatingNew(false)
@@ -88,12 +88,12 @@ export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-          <span className="text-sm font-semibold text-slate-200">Projetos</span>
+          <span className="text-sm font-semibold text-slate-200">Projects</span>
           <button
             className="text-xs text-amber-400 hover:text-amber-300 font-medium"
             onClick={() => setCreatingNew(true)}
           >
-            + Novo
+            + New
           </button>
         </div>
 
@@ -102,7 +102,7 @@ export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
             <input
               ref={newNameInputRef}
               className="flex-1 bg-slate-800 text-sm text-slate-200 rounded px-2 py-1 outline-none border border-slate-600 focus:border-amber-500"
-              placeholder="Nome do projeto"
+              placeholder="Project name"
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
               onKeyDown={(e) => {
@@ -111,14 +111,14 @@ export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
               }}
             />
             <button className="text-xs text-amber-400 hover:text-amber-300 font-medium px-2" onClick={handleCreate}>
-              Criar
+              Create
             </button>
           </div>
         )}
 
         <ul className="max-h-80 overflow-y-auto">
           {sorted.length === 0 && (
-            <li className="px-4 py-6 text-center text-slate-600 text-sm">Nenhum projeto salvo</li>
+            <li className="px-4 py-6 text-center text-slate-600 text-sm">No projects saved</li>
           )}
           {sorted.map((meta) => (
             <li
@@ -154,7 +154,7 @@ export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     className="text-slate-500 hover:text-slate-300 text-xs p-1"
-                    title="Renomear"
+                    title="Rename"
                     onClick={(e) => {
                       e.stopPropagation()
                       setRenamingId(meta.id)
@@ -169,19 +169,19 @@ export function ProjectsPanel({ onLoadProject, onClose }: ProjectsPanelProps) {
                         className="text-red-400 hover:text-red-300 text-xs p-1 font-medium"
                         onClick={(e) => { e.stopPropagation(); handleDelete(meta.id) }}
                       >
-                        Sim
+                        Yes
                       </button>
                       <button
                         className="text-slate-500 hover:text-slate-300 text-xs p-1"
                         onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
                       >
-                        Não
+                        No
                       </button>
                     </>
                   ) : (
                     <button
                       className="text-slate-500 hover:text-red-400 text-xs p-1"
-                      title="Excluir"
+                      title="Delete"
                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(meta.id) }}
                     >
                       ✕

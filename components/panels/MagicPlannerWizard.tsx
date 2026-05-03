@@ -111,8 +111,8 @@ export function MagicPlannerWizard({ recipes, machines }: MagicPlannerWizardProp
       >
         <div className="px-4 py-3 border-b border-slate-700/60 flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-amber-200">Planejador mágico</p>
-            <p className="text-xs text-slate-500">Escolha receitas quando houver alternativas.</p>
+            <p className="text-sm font-semibold text-amber-200">Magic planner</p>
+            <p className="text-xs text-slate-500">Choose recipes when there are alternatives.</p>
           </div>
           <button className="text-slate-400 hover:text-white text-sm" onClick={closeMenu}>✕</button>
         </div>
@@ -151,15 +151,15 @@ export function MagicPlannerWizard({ recipes, machines }: MagicPlannerWizardProp
             </>
           ) : (
             <div className="text-sm text-slate-300">
-              <p className="font-medium text-emerald-300">Tudo resolvido.</p>
-              <p className="text-slate-500 text-xs mt-1">Próximo passo: aplicar o plano (criar nós e conexões).</p>
+              <p className="font-medium text-emerald-300">All resolved.</p>
+              <p className="text-slate-500 text-xs mt-1">Next step: apply the plan (create nodes and connections).</p>
             </div>
           )}
         </div>
 
         <div className="px-4 py-3 border-t border-slate-700/60 flex items-center justify-between">
           <div className="text-xs text-slate-500">
-            Pendências: <span className="text-slate-300 font-semibold">{plan.pendingChoices.length}</span>
+            Pending: <span className="text-slate-300 font-semibold">{plan.pendingChoices.length}</span>
           </div>
           <button
             disabled={plan.pendingChoices.length > 0}
@@ -178,7 +178,7 @@ export function MagicPlannerWizard({ recipes, machines }: MagicPlannerWizardProp
               })
             }}
           >
-            Aplicar
+            Apply
           </button>
         </div>
       </div>

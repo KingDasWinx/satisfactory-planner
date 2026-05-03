@@ -117,7 +117,7 @@ export function ContextMenu() {
         style={{ left: menu.position.x, top: menu.position.y, visibility: 'hidden' }}
       >
         <div className="px-3 py-2 border-b border-slate-700/60 bg-slate-800/40">
-          <p className="text-xs font-semibold text-slate-200">{isNode ? 'Ferramentas do bloco' : 'Ferramentas do canvas'}</p>
+          <p className="text-xs font-semibold text-slate-200">{isNode ? 'Block tools' : 'Canvas tools'}</p>
         </div>
 
         <div className="py-1">
@@ -127,15 +127,15 @@ export function ContextMenu() {
                 onClick={actionAddRecipe}
                 className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
               >
-                Adicionar receita…
+                Add recipe…
               </button>
               <button
                 onClick={actionPaste}
                 disabled={!clipboard || clipboard.nodes.length === 0}
                 className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
-                title={!clipboard || clipboard.nodes.length === 0 ? 'Nada para colar' : 'Cola o conteúdo do Ctrl+C'}
+                title={!clipboard || clipboard.nodes.length === 0 ? 'Nothing to paste' : 'Paste the Ctrl+C content'}
               >
-                Colar
+                Paste
               </button>
             </>
           )}
@@ -147,7 +147,7 @@ export function ContextMenu() {
                   onClick={actionMagic}
                   className="w-full text-left px-3 py-2 text-sm text-amber-300 hover:bg-slate-800 transition-colors"
                 >
-                  Mágica
+                  Magic
                 </button>
               )}
               {isTextNode && (
@@ -156,30 +156,30 @@ export function ContextMenu() {
                     onClick={actionEditText}
                     className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
                   >
-                    Editar texto…
+                    Edit text…
                   </button>
                   <button
                     onClick={actionResetTextStyle}
                     className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
-                    title="Remove as personalizações e volta ao padrão"
+                    title="Removes customizations and resets to default"
                   >
-                    Resetar estilo
+                    Reset style
                   </button>
                 </>
               )}
               <button
                 onClick={actionCopyNode}
                 className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
-                title="Copia este bloco (como Ctrl+C)"
+                title="Copy this block (like Ctrl+C)"
               >
-                Copiar bloco
+                Copy block
               </button>
               <button
                 onClick={actionDeleteNode}
                 className="w-full text-left px-3 py-2 text-sm text-red-300 hover:bg-slate-800 transition-colors"
-                title="Remove apenas este bloco"
+                title="Remove only this block"
               >
-                Excluir bloco
+                Delete block
               </button>
             </>
           )}

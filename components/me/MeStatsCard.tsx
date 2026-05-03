@@ -44,7 +44,7 @@ export function MeStatsCard() {
       })
       .catch(() => {
         if (!cancelled)
-          setError('Não foi possível carregar sua pontuação.')
+          setError('Could not load your stats.')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -57,7 +57,7 @@ export function MeStatsCard() {
   if (loading) {
     return (
       <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5">
-        <p className="text-xs text-slate-600">Carregando...</p>
+        <p className="text-xs text-slate-600">Loading...</p>
       </div>
     )
   }
@@ -79,22 +79,22 @@ export function MeStatsCard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs text-slate-500 uppercase tracking-wider">
-            Sua conta
+            Your account
           </p>
           <p className="text-lg font-bold text-slate-100 mt-1">
-            Nível {stats.level}
+            Level {stats.level}
           </p>
         </div>
         <div className="flex gap-3">
           <div className="text-center">
             <p className="text-lg font-bold text-amber-400">{stats.points}</p>
-            <p className="text-xs text-slate-500">Pontos</p>
+            <p className="text-xs text-slate-500">Points</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-amber-400">
               {stats.achievements.length}
             </p>
-            <p className="text-xs text-slate-500">Conquistas</p>
+            <p className="text-xs text-slate-500">Achievements</p>
           </div>
         </div>
       </div>

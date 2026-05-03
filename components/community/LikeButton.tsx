@@ -15,13 +15,13 @@ export function LikeButton({ projectId }: { projectId: string }) {
     fetch(`/api/projects/${encodeURIComponent(projectId)}/likes`)
       .then((r) => (r.ok ? (r.json() as Promise<LikesState>) : Promise.reject(new Error('bad'))))
       .then((json) => { if (!cancelled) setState({ count: Number(json.count ?? 0), likedByMe: Boolean(json.likedByMe) }) })
-      .catch(() => { if (!cancelled) setError('Não foi possível carregar likes.') })
+      .catch(() => { if (!cancelled) setError('Could not load likes.') })
     return () => { cancelled = true }
   }, [projectId])
 
   const label = useMemo(() => {
-    if (!state) return 'Curtir'
-    return state.likedByMe ? `Curtido (${state.count})` : `Curtir (${state.count})`
+    if (!state) return 'Like'
+    return state.likedByMe ? `Liked (${state.count})` : `Like (${state.count})`
   }, [state])
 
   async function toggle() {
@@ -34,9 +34,9 @@ export function LikeButton({ projectId }: { projectId: string }) {
 
     const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/like`, { method: nextLiked ? 'POST' : 'DELETE' }).catch(() => null)
     setLoading(false)
-    if (!res) { setError('Falha de rede.'); return }
-    if (res.status === 401) { setError('Faça login para curtir.'); return }
-    if (!res.ok) { setError('Não foi possível atualizar.'); return }
+    if (!res) { setError('Network error.'); return }
+    if (res.status === 401) { setError('Sign in to like.'); return }
+    if (!res.ok) { setError('Could not update.'); return }
     // Re-sync para evitar drift
     const rr = await fetch(`/api/projects/${encodeURIComponent(projectId)}/likes`).catch(() => null)
     if (rr?.ok) {
@@ -53,7 +53,7 @@ export function LikeButton({ projectId }: { projectId: string }) {
           ? 'border-amber-500/40 bg-amber-500/10 text-amber-300 hover:border-amber-500/60'
           : 'border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700'
       } ${loading ? 'opacity-70' : ''}`}
-      aria-label={state?.likedByMe ? 'Descurtir projeto' : 'Curtir projeto'}
+      aria-label={state?.likedByMe ? 'Unlike project' : 'Like project'}
       aria-busy={loading}
       disabled={loading || !state}
       onClick={() => { void toggle() }}

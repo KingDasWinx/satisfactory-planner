@@ -105,7 +105,7 @@ function ProjectsSection({ multiMachines }: { multiMachines: MultiMachine[] }) {
   if (!hydrated) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-600 text-sm">
-        Carregando projetos...
+        Loading projects...
       </div>
     )
   }
@@ -114,9 +114,9 @@ function ProjectsSection({ multiMachines }: { multiMachines: MultiMachine[] }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-8 py-6 border-b border-slate-800 shrink-0">
         <div>
-          <h1 className="text-lg font-bold text-slate-100">Projetos</h1>
+          <h1 className="text-lg font-bold text-slate-100">Projects</h1>
           {sorted.length > 0 && (
-            <p className="text-xs text-slate-500 mt-0.5">{sorted.length} projeto{sorted.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{sorted.length} project{sorted.length !== 1 ? 's' : ''}</p>
           )}
         </div>
         <button
@@ -124,7 +124,7 @@ function ProjectsSection({ multiMachines }: { multiMachines: MultiMachine[] }) {
           onClick={() => setIsCreateOpen(true)}
         >
           <IconPlus />
-          Novo projeto
+          New project
         </button>
       </div>
 
@@ -134,7 +134,7 @@ function ProjectsSection({ multiMachines }: { multiMachines: MultiMachine[] }) {
           onClose={() => setIsCreateOpen(false)}
           onCreate={(input) => { setIsCreateOpen(false); void handleCreate(input) }}
         />
-        <LoginModal open={isLoginOpen} onClose={() => setIsLoginOpen(false)} title="Entrar para salvar na nuvem" />
+        <LoginModal open={isLoginOpen} onClose={() => setIsLoginOpen(false)} title="Sign in to save to cloud" />
 
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
@@ -142,15 +142,15 @@ function ProjectsSection({ multiMachines }: { multiMachines: MultiMachine[] }) {
               <IconFolder className="text-slate-600 mx-auto" />
             </div>
             <div>
-              <p className="text-slate-400 font-medium mb-1">Nenhum projeto ainda</p>
-              <p className="text-slate-600 text-sm">Crie seu primeiro projeto para começar a planejar</p>
+              <p className="text-slate-400 font-medium mb-1">No projects yet</p>
+              <p className="text-slate-600 text-sm">Create your first project to start planning</p>
             </div>
             <button
               className="flex items-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-400 transition-colors px-4 py-2.5 text-sm font-semibold text-slate-900"
               onClick={() => setIsCreateOpen(true)}
             >
               <IconPlus />
-              Criar projeto
+              Create project
             </button>
           </div>
         ) : (
@@ -172,7 +172,7 @@ function ProjectsSection({ multiMachines }: { multiMachines: MultiMachine[] }) {
               <svg width="24" height="24" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
-              <span className="text-sm font-medium">Novo projeto</span>
+              <span className="text-sm font-medium">New project</span>
             </button>
           </div>
         )}
@@ -218,7 +218,7 @@ function CommunitySectionInner() {
       })
       .catch(() => {
         if (cancelled) return
-        setError('Não foi possível carregar os projetos da comunidade.')
+        setError('Could not load community projects.')
         setLoading(false)
       })
     return () => { cancelled = true }
@@ -232,7 +232,7 @@ function CommunitySectionInner() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-600 text-sm">
-        Carregando comunidade...
+        Loading community...
       </div>
     )
   }
@@ -245,8 +245,8 @@ function CommunitySectionInner() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-8 py-6 border-b border-slate-800 shrink-0">
         <div>
-          <h1 className="text-lg font-bold text-slate-100">Comunidade</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Projetos públicos publicados pela comunidade</p>
+          <h1 className="text-lg font-bold text-slate-100">Community</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Public projects published by the community</p>
         </div>
       </div>
 
@@ -260,7 +260,7 @@ function CommunitySectionInner() {
                 : 'border-slate-700 text-slate-400 hover:border-slate-600'
             }`}
           >
-            Recentes
+            Recent
           </button>
           <button
             onClick={() => handleSortChange('top')}
@@ -270,7 +270,7 @@ function CommunitySectionInner() {
                 : 'border-slate-700 text-slate-400 hover:border-slate-600'
             }`}
           >
-            Mais curtidos
+            Most liked
           </button>
         </div>
       )}
@@ -288,8 +288,8 @@ function CommunitySectionInner() {
               <IconGlobe className="text-slate-600 mx-auto" />
             </div>
             <div>
-              <p className="text-slate-400 font-medium mb-1">Nenhum projeto público ainda</p>
-              <p className="text-slate-600 text-sm">Quando alguém publicar, ele vai aparecer aqui</p>
+              <p className="text-slate-400 font-medium mb-1">No public projects yet</p>
+              <p className="text-slate-600 text-sm">When someone publishes, it will appear here</p>
             </div>
           </div>
         ) : (
@@ -317,7 +317,7 @@ function CommunitySectionInner() {
 
 function CommunitySection() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-64 text-slate-600 text-sm">Carregando comunidade...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-64 text-slate-600 text-sm">Loading community...</div>}>
       <CommunitySectionInner />
     </Suspense>
   )

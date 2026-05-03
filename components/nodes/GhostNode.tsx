@@ -70,7 +70,7 @@ export function GhostNode() {
           transform: 'translateX(-50%)',
         }}
       >
-        Clique para colar · Esc para cancelar
+        Click to paste · Esc to cancel
       </div>
     </div>
   )

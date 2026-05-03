@@ -75,14 +75,14 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
         style={{ left: pos.left, top: pos.top }}
       >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-amber-400">Texto</span>
+          <span className="text-xs font-semibold text-amber-400">Text</span>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-300 text-xs">✕</button>
         </div>
 
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <label className="space-y-1">
-              <span className="text-xs text-slate-500">Tamanho</span>
+              <span className="text-xs text-slate-500">Size</span>
               <input
                 type="number"
                 min={8}
@@ -109,7 +109,7 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
           </div>
 
           <label className="space-y-1">
-            <span className="text-xs text-slate-500">Cor do texto</span>
+            <span className="text-xs text-slate-500">Text color</span>
             <input
               value={colorDraft}
               onChange={(e) => setColorDraft(e.target.value)}
@@ -120,7 +120,7 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
           </label>
 
           <label className="space-y-1">
-            <span className="text-xs text-slate-500">Fundo</span>
+            <span className="text-xs text-slate-500">Background</span>
             <input
               value={bgDraft}
               onChange={(e) => setBgDraft(e.target.value)}
@@ -131,15 +131,15 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
           </label>
 
           <label className="space-y-1">
-            <span className="text-xs text-slate-500">Alinhamento</span>
+            <span className="text-xs text-slate-500">Alignment</span>
             <select
               value={textAlign}
               onChange={(e) => setTextNodeStyle(id, { textAlign: e.target.value as TextNodeData['textAlign'] })}
               className="w-full text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-amber-500"
             >
-              <option value="left">Esquerda</option>
-              <option value="center">Centro</option>
-              <option value="right">Direita</option>
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
             </select>
           </label>
 
@@ -152,7 +152,7 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
                   : 'border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/40'
               }`}
             >
-              Negrito
+              Bold
             </button>
             <button
               onClick={() => setTextNodeStyle(id, { italic: !italic })}
@@ -162,7 +162,7 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
                   : 'border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/40'
               }`}
             >
-              Itálico
+              Italic
             </button>
             <button
               onClick={() => setTextNodeStyle(id, { underline: !underline })}
@@ -172,13 +172,13 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
                   : 'border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/40'
               }`}
             >
-              Sublinhado
+              Underline
             </button>
           </div>
 
           <div className="space-y-2 pt-1">
             <label className="flex items-center justify-between gap-3">
-              <span className="text-xs text-slate-300">Bloquear edição (duplo clique)</span>
+              <span className="text-xs text-slate-300">Lock editing (double-click)</span>
               <input
                 type="checkbox"
                 checked={locked}
@@ -187,7 +187,7 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
               />
             </label>
             <label className="flex items-center justify-between gap-3">
-              <span className="text-xs text-slate-300">Altura automática</span>
+              <span className="text-xs text-slate-300">Auto height</span>
               <input
                 type="checkbox"
                 checked={autoSizeHeight}
@@ -202,15 +202,15 @@ export function TextConfigPopup({ id, data, anchorRect, onClose }: TextConfigPop
           <button
             onClick={() => resetTextNodeStyle(id)}
             className="text-xs px-2 py-1 rounded border border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/40"
-            title="Remove as personalizações e volta ao padrão"
+            title="Removes customizations and resets to default"
           >
-            Resetar estilo
+            Reset style
           </button>
           <button
             onClick={onClose}
             className="text-xs px-2 py-1 rounded border border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/40"
           >
-            Fechar
+            Close
           </button>
         </div>
       </div>

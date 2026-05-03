@@ -13,7 +13,7 @@ export function AchievementBadgeList({ achievements }: AchievementBadgeListProps
   if (!achievements || achievements.length === 0) {
     return (
       <p className="text-xs text-slate-600">
-        Nenhuma conquista ainda — explore a comunidade!
+        No achievements yet — explore the community!
       </p>
     )
   }

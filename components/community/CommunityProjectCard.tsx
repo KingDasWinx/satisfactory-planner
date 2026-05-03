@@ -26,11 +26,11 @@ function formatRelativeTime(ms: number): string {
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 
-  if (seconds < 60) return 'há alguns segundos'
-  if (minutes < 60) return `há ${minutes} min${minutes > 1 ? '' : ''}`
-  if (hours < 24) return `há ${hours} h`
-  if (days < 30) return `há ${days} d`
-  return `há ${Math.floor(days / 30)} meses`
+  if (seconds < 60) return 'just now'
+  if (minutes < 60) return `${minutes} min ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days < 30) return `${days}d ago`
+  return `${Math.floor(days / 30)} months ago`
 }
 
 interface CommunityProjectCardProps {
@@ -100,7 +100,7 @@ export function CommunityProjectCard({
             <IconComment className="w-3.5 h-3.5" />
             <span>{commentCount}</span>
           </div>
-          <span className="text-xs text-slate-600 ml-auto">Abrir →</span>
+          <span className="text-xs text-slate-600 ml-auto">Open →</span>
         </div>
       </div>
     </Link>

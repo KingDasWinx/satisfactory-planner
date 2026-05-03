@@ -95,9 +95,9 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
         >
           {text ||
             (data.locked ? (
-              <span className="text-slate-600 italic text-sm">Bloqueado</span>
+              <span className="text-slate-600 italic text-sm">Locked</span>
             ) : (
-              <span className="text-slate-600 italic text-sm">Duplo clique para editar</span>
+              <span className="text-slate-600 italic text-sm">Double-click to edit</span>
             ))}
         </p>
       )}

@@ -17,9 +17,9 @@ export function CollectionsPanel() {
     setLoading(true)
     setError(null)
     const res = await fetch('/api/me/collections').catch(() => null)
-    if (!res) { setLoading(false); setError('Falha de rede.'); return }
-    if (res.status === 401) { setLoading(false); setError('Faça login para ver coleções.'); return }
-    if (!res.ok) { setLoading(false); setError('Não foi possível carregar.'); return }
+    if (!res) { setLoading(false); setError('Network error.'); return }
+    if (res.status === 401) { setLoading(false); setError('Sign in to view collections.'); return }
+    if (!res.ok) { setLoading(false); setError('Could not load.'); return }
     const json = (await res.json().catch(() => null)) as unknown
     setItems(Array.isArray(json) ? (json as CollectionRow[]) : [])
     setLoading(false)
@@ -39,9 +39,9 @@ export function CollectionsPanel() {
       body: JSON.stringify({ name }),
     }).catch(() => null)
     setCreating(false)
-    if (!res) { setError('Falha de rede.'); return }
-    if (res.status === 401) { setError('Faça login para criar.'); return }
-    if (!res.ok) { setError('Não foi possível criar.'); return }
+    if (!res) { setError('Network error.'); return }
+    if (res.status === 401) { setError('Sign in to create.'); return }
+    if (!res.ok) { setError('Could not create.'); return }
     setName('')
     await refresh()
   }
@@ -55,37 +55,37 @@ export function CollectionsPanel() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name: trimmed }),
     }).catch(() => null)
-    if (!res || !res.ok) { setError('Não foi possível renomear.'); return }
+    if (!res || !res.ok) { setError('Could not rename.'); return }
     setItems((prev) => prev.map((c) => (c.id === id ? { ...c, name: trimmed } : c)))
   }
 
   async function remove(id: string) {
     setError(null)
     const res = await fetch(`/api/me/collections/${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => null)
-    if (!res || !res.ok) { setError('Não foi possível excluir.'); return }
+    if (!res || !res.ok) { setError('Could not delete.'); return }
     setItems((prev) => prev.filter((c) => c.id !== id))
   }
 
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-5 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-slate-100">Coleções</h2>
+        <h2 className="text-sm font-bold text-slate-100">Collections</h2>
         <button
           type="button"
           className="text-xs text-slate-400 hover:text-slate-200"
           onClick={() => { void refresh() }}
         >
-          Atualizar
+          Refresh
         </button>
       </div>
 
       <div className="flex items-center gap-2">
         <input
           className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-amber-500"
-          placeholder="Nova coleção..."
+          placeholder="New collection..."
           value={name}
           onChange={(e) => setName(e.target.value)}
-          aria-label="Nome da nova coleção"
+          aria-label="New collection name"
         />
         <button
           type="button"
@@ -93,16 +93,16 @@ export function CollectionsPanel() {
           disabled={!canCreate || creating}
           onClick={() => { void create() }}
         >
-          {creating ? 'Criando...' : 'Criar'}
+          {creating ? 'Creating...' : 'Create'}
         </button>
       </div>
 
       {error && <p className="text-xs text-amber-300">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-slate-600">Carregando...</p>
+        <p className="text-sm text-slate-600">Loading...</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-slate-600">Nenhuma coleção ainda.</p>
+        <p className="text-sm text-slate-600">No collections yet.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {items.map((c) => (
@@ -142,7 +142,7 @@ function CollectionCard({
             className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-sm text-slate-200 outline-none focus:border-amber-500"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            aria-label="Renomear coleção"
+            aria-label="Rename collection"
           />
         ) : (
           <p className="text-sm font-semibold text-slate-100 truncate">{item.name}</p>
@@ -150,7 +150,7 @@ function CollectionCard({
         <span className="text-[11px] text-slate-500">{item.itemCount} itens</span>
       </div>
 
-      <p className="text-[11px] text-slate-600">Atualizado em {new Date(item.updatedAt).toLocaleDateString('pt-BR')}</p>
+      <p className="text-[11px] text-slate-600">Updated {new Date(item.updatedAt).toLocaleDateString('en-US')}</p>
 
       <div className="flex items-center gap-2">
         {editing ? (
@@ -160,14 +160,14 @@ function CollectionCard({
               className="text-xs text-slate-300 hover:text-slate-100"
               onClick={() => { setEditing(false); void onRename(item.id, name) }}
             >
-              Salvar
+              Save
             </button>
             <button
               type="button"
               className="text-xs text-slate-500 hover:text-slate-200"
               onClick={() => { setEditing(false); setName(item.name) }}
             >
-              Cancelar
+              Cancel
             </button>
           </>
         ) : (
@@ -176,19 +176,19 @@ function CollectionCard({
             className="text-xs text-slate-500 hover:text-slate-200"
             onClick={() => setEditing(true)}
           >
-            Renomear
+            Rename
           </button>
         )}
 
         <div className="ml-auto">
           {confirm ? (
             <div className="flex items-center gap-2">
-              <button type="button" className="text-xs text-red-300 hover:text-red-200" onClick={() => onRemove(item.id)}>Excluir</button>
-              <button type="button" className="text-xs text-slate-500 hover:text-slate-200" onClick={() => setConfirm(false)}>Cancelar</button>
+              <button type="button" className="text-xs text-red-300 hover:text-red-200" onClick={() => onRemove(item.id)}>Delete</button>
+              <button type="button" className="text-xs text-slate-500 hover:text-slate-200" onClick={() => setConfirm(false)}>Cancel</button>
             </div>
           ) : (
             <button type="button" className="text-xs text-slate-500 hover:text-red-300" onClick={() => setConfirm(true)}>
-              Excluir
+              Delete
             </button>
           )}
         </div>

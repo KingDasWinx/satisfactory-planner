@@ -20,8 +20,8 @@ export function FeaturedProjects({ username }: { username: string }) {
     return () => { cancelled = true }
   }, [username])
 
-  if (loading) return <p className="text-sm text-slate-600">Carregando...</p>
-  if (items.length === 0) return <p className="text-sm text-slate-600">Nenhum destaque.</p>
+  if (loading) return <p className="text-sm text-slate-600">Loading...</p>
+  if (items.length === 0) return <p className="text-sm text-slate-600">No featured projects.</p>
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -33,12 +33,12 @@ export function FeaturedProjects({ username }: { username: string }) {
         >
           <div className="absolute top-3 right-3">
             <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5">
-              ★ Destaque
+              ★ Featured
             </span>
           </div>
           <p className="text-sm font-semibold text-slate-100 truncate pr-24">{p.name}</p>
           {p.description && <p className="text-xs text-slate-500 mt-2 line-clamp-3">{p.description}</p>}
-          <p className="text-xs text-slate-600 mt-3">Atualizado em {new Date(p.updatedAt).toLocaleDateString('pt-BR')}</p>
+          <p className="text-xs text-slate-600 mt-3">Updated {new Date(p.updatedAt).toLocaleDateString('en-US')}</p>
         </Link>
       ))}
     </div>

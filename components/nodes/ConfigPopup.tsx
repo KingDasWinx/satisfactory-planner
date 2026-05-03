@@ -41,7 +41,7 @@ export function ConfigPopup({ id, data, anchorRect, onClose }: ConfigPopupProps)
 
         {availableRecipes.length > 1 && (
           <div className="space-y-1">
-            <p className="text-xs text-slate-500">Receita</p>
+            <p className="text-xs text-slate-500">Recipe</p>
             <div className="rounded border border-slate-700 bg-slate-800 max-h-36 overflow-y-auto">
               {availableRecipes.map((r: ParsedRecipe) => (
                 <button
@@ -59,7 +59,7 @@ export function ConfigPopup({ id, data, anchorRect, onClose }: ConfigPopupProps)
 
         {multiMachine && multiMachine.machines.length > 0 && (
           <div className="space-y-1">
-            <p className="text-xs text-slate-500">Tipo de mineradora</p>
+            <p className="text-xs text-slate-500">Extractor type</p>
             <div className="flex gap-1.5">
               <select
                 value={currentMinerVariant}
@@ -86,9 +86,9 @@ export function ConfigPopup({ id, data, anchorRect, onClose }: ConfigPopupProps)
         )}
 
         <div className="space-y-1">
-          <p className="text-xs text-slate-500">Quantidade e clock</p>
+          <p className="text-xs text-slate-500">Quantity & clock</p>
           <div className="flex gap-1.5 items-center">
-            <label className="text-xs text-slate-500 shrink-0 w-8">Qtd</label>
+            <label className="text-xs text-slate-500 shrink-0 w-8">Qty</label>
             <input
               type="number"
               min={0.01}
@@ -102,7 +102,7 @@ export function ConfigPopup({ id, data, anchorRect, onClose }: ConfigPopupProps)
           {autoLocked && (
             <div className="rounded border border-slate-800 bg-slate-950/40 px-2 py-1 space-y-1">
               <div className="text-[10px] text-slate-400">
-                Travado (manual) — a quantidade não muda automaticamente.
+                Locked (manual) — quantity won't change automatically.
               </div>
               <div className="flex items-center gap-1.5">
                 <button
@@ -110,7 +110,7 @@ export function ConfigPopup({ id, data, anchorRect, onClose }: ConfigPopupProps)
                   className="text-[10px] px-2 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/60 hover:text-amber-200"
                   title="Destrava e volta a ajustar em cadeia nas próximas atualizações"
                 >
-                  Reativar auto
+                  Re-enable auto
                 </button>
                 <button
                   onClick={() => {
@@ -121,7 +121,7 @@ export function ConfigPopup({ id, data, anchorRect, onClose }: ConfigPopupProps)
                   className="text-[10px] px-2 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/60 hover:text-amber-200 disabled:opacity-40 disabled:hover:border-slate-700 disabled:hover:text-slate-200"
                   title={autoNMachines === undefined ? 'Sem recomendado disponível agora' : 'Aplica o recomendado atual e destrava'}
                 >
-                  Resetar p/ recomendado
+                  Reset to recommended
                 </button>
               </div>
             </div>

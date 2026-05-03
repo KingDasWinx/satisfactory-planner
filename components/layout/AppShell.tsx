@@ -162,7 +162,7 @@ export function AppShell() {
                       className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors"
                     >
                       <IconProfile />
-                      Ver perfil público
+                      View public profile
                     </Link>
                   )}
                   {username && (
@@ -172,7 +172,7 @@ export function AppShell() {
                       className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors"
                     >
                       <IconAccount />
-                      Minha conta
+                      My account
                     </Link>
                   )}
                   {username && (
@@ -182,7 +182,7 @@ export function AppShell() {
                       className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors"
                     >
                       <IconSettings />
-                      Configurações de perfil
+                      Profile settings
                     </Link>
                   )}
                   <div className="my-1 h-px bg-slate-800" />
@@ -191,7 +191,7 @@ export function AppShell() {
                     className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
                   >
                     <IconLogout />
-                    Sair
+                    Sign out
                   </button>
                 </div>
               )}
@@ -203,7 +203,7 @@ export function AppShell() {
               className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 text-sm font-medium text-amber-400 transition-colors"
             >
               <IconUser />
-              Entrar
+              Sign in
             </button>
           )}
         </div>
